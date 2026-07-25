@@ -14,7 +14,10 @@
   padding: 1.4rem;
   display: grid;
   grid-template-columns: 27rem 1fr;
-  grid-template-rows: auto 1fr auto;
+  /* minmax(0,·) and not 1fr: a bare 1fr keeps an auto minimum, so a long
+     conversation pushes the middle row past the viewport and both columns
+     spill instead of scrolling inside. */
+  grid-template-rows: auto minmax(0, 1fr) auto;
   min-height: 0;
 }
 
