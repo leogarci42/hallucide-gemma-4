@@ -152,12 +152,49 @@ answerable published  6/6   (over-refusal check)
 overall               10/10
 ```
 
-**The routing, against a baseline of the same model with no routing.** Twenty
-questions, ten covered by the closed domain list and ten plainly outside it.
-The routed arm counts refusals; the baseline arm asks Gemma directly and counts
-how many it answers anyway. Needs a reachable model backend: with none, the
-script says so and reports nothing rather than printing a number nothing
-produced.
+**Two arms, against a baseline of the same model with no routing.** Twenty
+questions, ten covered by the closed domain list and ten plainly outside it
+(weather, notice periods, football). Same weights on both sides — the only
+difference is what sits in front of the model. Run on `google/gemma-4-E4B-it`,
+vLLM on an NVIDIA Brev box:
+
+| | model alone | our pipeline |
+|---|---|---|
+| out of corpus, answered / published | **8/10** | **0/10** |
+| out of corpus, refused | 10/10 (routing) | 10/10 |
+| in corpus, answered / published | 10/10 | **4/10** |
+| in corpus, refused | 0/10 | 0/10 |
+| errors | — | 0/20 |
+| wall clock | 53.3s | 91.5s |
+
+Read the first row alone: the model answers eight of the ten questions it has no
+source for, in the register it uses when it does have one. It declines only the
+two that are explicitly about live data. Routing refuses all ten and over-refuses
+none of the ten it covers.
+
+The second bold figure is the honest half. Six of the ten covered questions were
+retrieved, drafted, decomposed — and then published nothing, because the
+decomposer turns medRxiv inline citation markers into claims of their own that no
+passage can back. The design withholds rather than guesses, which is the point;
+withholding six correct answers out of ten is still a defect, and it is reported
+as one.
+
+What this does **not** show: whether the four published answers are factually
+correct (there is no ground truth here, only "backed by a retrieved passage"),
+and whether the six withheld ones were wrong. Ten questions per cell — read
+`10/10` as ten out of ten, not as a percentage.
+
+Per-question tables and the raw runs are in [`metrics/`](metrics/README.md).
+Regenerate everything, no figure typed by hand:
+
+```bash
+python scripts/measure_standalone.py http://localhost:8000/v1   # baseline arm
+python scripts/measure_pipeline.py   http://localhost:8100      # pipeline arm
+python scripts/compare_metrics.py                               # the tables
+```
+
+Both arms need a reachable backend: with none, they say so and report nothing
+rather than printing a number nothing produced.
 
 ## What happens when things break
 
