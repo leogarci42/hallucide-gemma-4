@@ -53,12 +53,14 @@ Intelligence supplies the corpora and the retrieval.
 front/    the interface: Next.js, TypeScript, no CSS or state framework
 src/      the engine: routing, Alien retrieval, Gemma, verbatim checking
 scripts/  command-line entry points into the engine
+tests/    the engine's suite, run with pytest
 ```
 
 ## Running the interface
 
 ```bash
-make front
+make front          # the interface
+make ask Q="..."    # the pipeline straight from the shell
 ```
 
 It runs on <http://localhost:3000> and works with no backend: it reports the
