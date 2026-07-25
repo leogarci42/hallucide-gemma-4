@@ -50,10 +50,6 @@ from hallucide.core_types.exceptions import HallucideError  # noqa: E402
 from hallucide.core_types.types import ClaimStatus  # noqa: E402
 from hallucide.decomposition.routing import DomainRouter  # noqa: E402
 from hallucide.verification.normalization import normalize_text  # noqa: E402
-from hallucide.verification.semantic_similarity import (  # noqa: E402
-    DEFAULT_DISTANCE_THRESHOLD,
-    similarity_score,
-)
 
 PORT = int(os.environ.get("PORT", "8100"))
 MODEL_BASE_URL = os.environ.get("MODEL_BASE_URL", "http://localhost:8000/v1")
@@ -111,46 +107,38 @@ def _claim_source(passage: Any, chunk: dict[str, Any] | None) -> dict[str, Any]:
 def _map_claim(index: int, claim: Any, passage: Any) -> dict[str, Any]:
     """One engine claim in the interface's shape.
 
-    - the literal check (7b) is the engine's deterministic verbatim check --
-      authoritative on its own once it passes (§2/§7 of the engine: the
-      verdict comes from the source, verbatim is the strongest signal there
-      is). The semantic check never downgrades a verbatim-confirmed claim.
-    - the semantic check (7a) only decides the outcome for a reformulation
-      (INTERPRÉTATION), where no verbatim match exists to rely on. It is
-      scored against the SPECIFIC chunk the claim matched, never the whole
-      aggregated RAG-massif passage (many chunks concatenated) -- comparing
-      one sentence to 8-10 concatenated studies dilutes the score below
-      threshold even for an exact quote, which was flagging genuine verbatim
-      matches as unverifiable/hallucinated.
+    Both lanes are read off the engine's own verdict rather than recomputed
+    here, because recomputing them was reporting the opposite of the truth.
+    `similarity_score` is a symmetric measure (Jaccard over tokens and
+    trigrams): a one-sentence claim against a a thousand-character chunk
+    scores low on length difference alone, so every claim -- including
+    sentences copied verbatim out of that very chunk -- came back
+    `semantic fail`. What the engine already established:
+
+    - AUTHENTIFIÉ / CITÉ_NON_OPPOSABLE / DONNÉE_TRACÉE: found word for word
+      in the source. Verbatim is the strongest support there is, so both
+      lanes hold.
+    - INTERPRÉTATION: not verbatim, but it cleared the engine's anchoring
+      check (its content terms, its figures and its negations all trace back
+      to the passage). Semantic holds, literal does not.
+    - NON_AUTHENTIFIÉ: neither.
     """
     if claim.status in _VERBATIM_PASS:
         literal_pass: bool | None = True
+        semantic_pass: bool | None = True
+        status = "grounded"
     elif claim.status in _VERBATIM_FAIL:
         literal_pass = False
-    else:
-        literal_pass = None  # reformulation: the check could not settle it
-
-    # Against the closest single chunk, never the concatenation of all of them:
-    # the score is a set overlap, so measuring one sentence against ten studies
-    # at once drives it to zero whatever the claim says. The matched chunk is
-    # preferred; failing that, the best-scoring one, never the whole passage.
-    chunk = _matched_chunk(claim.ref, passage)
-    if chunk is not None:
-        semantic_score = similarity_score(claim.ref, chunk["text"])
-    else:
-        texts = [c.get("text", "") for c in (passage.metadata or {}).get("chunks") or []]
-        semantic_score = max(
-            (similarity_score(claim.ref, t) for t in texts),
-            default=similarity_score(claim.ref, passage.text),
-        )
-    semantic_pass = semantic_score >= DEFAULT_DISTANCE_THRESHOLD
-
-    if literal_pass:
-        status = "grounded"
-    elif literal_pass is None:
-        status = "grounded" if semantic_pass else "unverifiable"
-    else:
+        semantic_pass = False
         status = "hallucinated"
+    else:  # INTERPRÉTATION: anchored reformulation
+        literal_pass = False
+        semantic_pass = True
+        status = "grounded"
+
+    # The single chunk the claim was matched against, for attribution: the
+    # interface shows that passage, not the concatenation of all ten.
+    chunk = _matched_chunk(claim.ref, passage)
 
     out: dict[str, Any] = {
         "id": f"claim-{index}",
@@ -159,7 +147,7 @@ def _map_claim(index: int, claim: Any, passage: Any) -> dict[str, Any]:
         "semanticPass": semantic_pass,
         "literalPass": literal_pass,
     }
-    source = _claim_source(passage, chunk) if status in ("grounded", "unverifiable") else None
+    source = _claim_source(passage, chunk) if status == "grounded" else None
     if source:
         out["source"] = source
     return out

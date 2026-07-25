@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from hallucide.core_types.exceptions import RetrievalError
@@ -22,6 +23,62 @@ DEFAULT_ALIEN_SCORE_THRESHOLD = 0.4
 DEFAULT_ALIEN_LIMIT = 10
 
 _CHUNK_SEPARATOR = "\n\n---\n\n"
+
+# Le texte MedRxiv/BioRxiv arrive en markdown de conversion PDF : titres de
+# section, marqueurs de citation (`[[1,`, `[15,`), ancres de renvoi
+# (`(bibref:c3)`, `(figref:fig6)`), et des phrases dupliquées par le
+# pipeline d'extraction. Gemma s'y accroche : testé en direct, il ressortait
+# « Introduction », « Discussion » ou « [10](bibref:c10) » comme AFFIRMATIONS,
+# parce que ce sont les fragments les plus courts et les plus littéralement
+# citables du passage. On nettoie AVANT que Gemma voie le texte, donc le
+# vérificateur compare au même texte nettoyé : la garantie verbatim (§7) tient
+# toujours, elle porte simplement sur de la prose plutôt que sur du balisage.
+_REF_ANCHOR_RE = re.compile(r"\((?:bibref|figref):[^)]*\)")
+_CITATION_MARKER_RE = re.compile(r"\[+\s*(?:c)?\d+[\d,\s;:–—-]*\]*")
+_MARKDOWN_HEADING_RE = re.compile(r"^\s{0,3}#{1,6}\s.*$", re.MULTILINE)
+# Les marqueurs sont imbriqués et déséquilibrés dans la source (`[[1,`, `.]]`) :
+# une passe de regex laisse des crochets orphelins, qu'on retire ensuite.
+_STRAY_BRACKET_RE = re.compile(r"[\[\]]+")
+# ... et la ponctuation qu'ils laissaient derrière eux (` ,.` -> `.`), sans quoi
+# deux phrases identiques ne se dédupliquent pas.
+_ORPHAN_PUNCT_RE = re.compile(r"\s+([,;.])")
+_PUNCT_RUN_RE = re.compile(r"([,;])\s*\.")
+# Exactement deux points, jamais trois : « ... » reste intact, le vérificateur
+# s'en sert pour repérer une citation épissée (§7, anti-épissage).
+_DOUBLE_PERIOD_RE = re.compile(r"(?<!\.)\.\s*\.(?!\.)")
+_SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
+_WHITESPACE_RE = re.compile(r"[ \t]+")
+_BLANKLINES_RE = re.compile(r"\n{3,}")
+
+
+
+def _clean_chunk_text(raw: str) -> str:
+    text = _MARKDOWN_HEADING_RE.sub("", raw)
+    text = _REF_ANCHOR_RE.sub("", text)
+    text = _CITATION_MARKER_RE.sub("", text)
+    text = _STRAY_BRACKET_RE.sub("", text)
+    text = _WHITESPACE_RE.sub(" ", text)
+    text = _ORPHAN_PUNCT_RE.sub(r"\1", text)
+    text = _PUNCT_RUN_RE.sub(".", text)
+    text = _DOUBLE_PERIOD_RE.sub(".", text)
+    text = _BLANKLINES_RE.sub("\n\n", text)
+
+    # Le pipeline d'extraction répète des phrases entières à l'identique dans
+    # un même chunk. Les garder gonfle le contexte injecté sans rien apporter,
+    # et fait remonter deux fois la même affirmation.
+    seen: set[str] = set()
+    kept: list[str] = []
+    for sentence in _SENTENCE_SPLIT_RE.split(text):
+        stripped = sentence.strip()
+        if not stripped:
+            continue
+        key = stripped.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        kept.append(stripped)
+
+    return " ".join(kept).strip()
 
 
 class AlienRetrievalProvider:
@@ -134,10 +191,17 @@ class AlienRetrievalProvider:
             text = item.get("chunk_text")
             if not isinstance(text, str) or not text.strip():
                 continue
+            # Un chunk qui ne contenait qu'un titre de section ne laisse rien
+            # après nettoyage : ce n'était pas une source, c'était du sommaire.
+            # On ne filtre QUE sur ce critère -- un seuil de longueur jetterait
+            # aussi un résultat court mais réel ("RR=0.68, p<0.01").
+            cleaned = _clean_chunk_text(text)
+            if not cleaned:
+                continue
             metadata = item.get("metadata") or {}
             chunks.append({
                 "entry_id": str(metadata.get("entry_id", item.get("id", ""))),
                 "score": float(item.get("score", 0.0)),
-                "text": text.strip(),
+                "text": cleaned,
             })
         return chunks
