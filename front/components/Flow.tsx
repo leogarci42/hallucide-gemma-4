@@ -217,6 +217,17 @@ const C_BACKED = "#7fbf8f";
 const C_WITHHELD = "#e06a6a";
 const C_UNCHECKED = "#868686"; // neither check could settle it
 
+/* SMIL has no randomness, so each claim carries its own sequence of outcomes
+   and the sequences are different lengths: the five never settle into the same
+   arrangement twice running. */
+const OUTCOMES = [
+  [C_BACKED, C_BACKED, C_WITHHELD],
+  [C_BACKED, C_UNCHECKED],
+  [C_WITHHELD, C_BACKED, C_BACKED, C_BACKED],
+  [C_BACKED, C_UNCHECKED, C_BACKED, C_WITHHELD, C_BACKED],
+  [C_UNCHECKED, C_BACKED, C_BACKED],
+];
+
 
 const PER_UNIT = 0.9; // seconds
 const secs = (u: number) => u * PER_UNIT;
@@ -622,25 +633,20 @@ export default function Flow() {
           lap={LAP}
         />
 
-        {/* two claims leave the verdict, one backed and one withheld */}
-        <Rider
-          path="leg-out"
-          tone={C_BACKED}
-          cycleTones={[C_BACKED, C_WITHHELD, C_BACKED, C_BACKED]}
-          r={8}
-          begin={T_OUT}
-          dur={secs(LEG_OUT.units)}
-          lap={LAP}
-        />
-        <Rider
-          path="leg-out"
-          tone={C_WITHHELD}
-          cycleTones={[C_WITHHELD, C_BACKED, C_BACKED, C_WITHHELD]}
-          r={8}
-          begin={T_OUT + 0.45}
-          dur={secs(LEG_OUT.units)}
-          lap={LAP}
-        />
+        {/* five claims leave the aggregation, same size, differing only in
+            outcome */}
+        {OUTCOMES.map((cycle, i) => (
+          <Rider
+            key={i}
+            path="leg-out"
+            tone={cycle[0]}
+            cycleTones={cycle}
+            r={8}
+            begin={T_OUT + i * 0.32}
+            dur={secs(LEG_OUT.units)}
+            lap={LAP}
+          />
+        ))}
 
         {NODES.map((n) => (
           <Box key={n.id} node={n} onOpen={setOpen} />
