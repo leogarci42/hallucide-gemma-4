@@ -43,9 +43,9 @@ class MockModelProvider:
             raise HallucideError("Unable to infer prompt type from model messages.")
 
         content = prompt["content"]
-        if "Découpe le message" in content:
+        if "<task>Break down the following user message" in content or "Découpe le message" in content:
             key = "decompose"
-        elif "CITATION vs REFORMULATION" in content:
+        elif "<task>Generate claims that answer the user question" in content or "CITATION vs REFORMULATION" in content:
             key = "claims"
         else:
             key = "default"
@@ -60,9 +60,9 @@ class PromptBuilder:
             {
                 "role": "system",
                 "content": (
-                    "Découpe le message suivant en intentions atomiques. "
-                    "Réponds uniquement avec un tableau JSON de la forme "
-                    "[{\"id\": \"1\", \"question\": \"...\"}, ...]."
+                    "<task>Break down the following user message into atomic intents.</task>\n"
+                    "<format>Respond strictly with a JSON array in the following format:\n"
+                    '[{"id": "1", "question": "..."}, ...]</format>'
                 ),
             },
             {"role": "user", "content": message},
@@ -70,25 +70,20 @@ class PromptBuilder:
 
     @staticmethod
     def build_claim_generation_prompt(intent: Intent, passage: Passage) -> list[dict[str, str]]:
-        # Prompt B (§5) : distinction explicite citation vs paraphrase. Le
-        # modèle doit copier le VERBATIM exact pour AUTHENTIFIÉ, et marquer
-        # toute reformulation comme INTERPRÉTATION (non opposable, §7). Le
-        # vérificateur déterministe reste l'autorité finale (§2) : ce prompt
-        # améliore la coopération, il ne remplace pas le contrôle verbatim.
+        # Prompt B (§5): explicit citation vs paraphrase distinction.
+        # The model must output exact verbatim extracts for AUTHENTIFIÉ, and mark any paraphrase as INTERPRÉTATION.
         return [
             {
                 "role": "system",
                 "content": (
-                    "À partir du passage officiel fourni, produis les affirmations qui RÉPONDENT "
-                    "à la question, en t'appuyant uniquement sur ce passage.\n"
-                    "Règle CITATION vs REFORMULATION :\n"
-                    "  - Extrait repris MOT POUR MOT du passage -> statut \"AUTHENTIFIÉ\".\n"
-                    "  - Reformulation avec tes propres mots (résumé fidèle) -> statut \"INTERPRÉTATION\".\n"
-                    "N'ajoute aucun fait absent du passage. Si le passage contient de quoi répondre, "
-                    "produis au moins une affirmation ; s'il ne contient vraiment rien de pertinent, "
-                    "renvoie un tableau vide [].\n"
-                    "Réponds UNIQUEMENT par un tableau JSON de la forme "
-                    "[{\"ref\": \"...\", \"status\": \"AUTHENTIFIÉ|INTERPRÉTATION\"}, ...]."
+                    "<task>Generate claims that answer the user question based solely on the provided official passage.</task>\n"
+                    "<rules>\n"
+                    '  <rule type="CITATION">An exact VERBATIM extract copied word-for-word from the passage -> status "AUTHENTIFIÉ".</rule>\n'
+                    '  <rule type="REFORMULATION">A paraphrase or faithful summary using your own words -> status "INTERPRÉTATION".</rule>\n'
+                    '  <rule type="CONSTRAINTS">Do NOT introduce facts absent from the passage. If relevant information exists, produce at least one claim; otherwise return an empty array [].</rule>\n'
+                    "</rules>\n"
+                    "<format>Respond strictly with a JSON array in the following format:\n"
+                    '[{"ref": "...", "status": "AUTHENTIFIÉ|INTERPRÉTATION"}, ...]</format>'
                 ),
             },
             {"role": "user", "content": f"Question: {intent.question}\nPassage: {passage.text}"},
@@ -99,10 +94,8 @@ _MARKDOWN_FENCE_PATTERN = re.compile(r"^```(?:json)?\s*\n?(.*?)\n?```$", re.DOTA
 
 
 def _strip_markdown_fence(text: str) -> str:
-    """Certains LLM (Gemini observé en direct) enveloppent une réponse JSON
-    dans une balise de code markdown malgré la consigne "réponds uniquement
-    par...". Le contrôle verbatim (§7) ne dépend jamais de cette tolérance --
-    elle ne fait qu'aider le parsing JSON en amont, purement cosmétique.
+    """Certain LLMs wrap JSON responses in markdown code blocks despite strict formatting rules.
+    This safely strips those code fences before parsing.
     """
     match = _MARKDOWN_FENCE_PATTERN.match(text.strip())
     return match.group(1).strip() if match else text
@@ -131,14 +124,8 @@ def _extract_text_response(response: dict[str, Any]) -> str:
 
 
 class PromptBasedDecomposer:
-    """§6 : la décomposition ne récupère jamais de passage elle-même --
-    l'orchestrateur appelle toujours MCP directement (§4 étape 4), jamais le
-    LLM. Cette classe n'a donc aucun outil à forcer ; le forçage natif
-    (`tool_choice: required`) décrit par §6 ne s'applique qu'à un backend qui
-    laisserait le modèle appeler `search_tricoteuses` lui-même -- ce que
-    l'architecture actuelle n'a jamais fait, en choisissant la voie
-    équivalente explicitement autorisée par §6 ("backend local sans
-    forçage") pour tous les backends, pas seulement les modèles locaux.
+    """§6 : decomposition never retrieves passages itself -- the orchestrator
+    calls MCP directly (§4 step 4). No tools needed here.
     """
 
     def __init__(self, model_provider: ModelProvider) -> None:
@@ -164,9 +151,8 @@ class PromptBasedDecomposer:
 
 
 class PromptBasedIntentGenerator:
-    """§6 : la génération contrainte (étape 6) reçoit le passage déjà
-    récupéré par l'orchestrateur -- elle n'appelle jamais elle-même
-    `search_tricoteuses`, donc aucun outil à forcer ici non plus.
+    """§6 : constrained generation (step 6) receives the passage retrieved by
+    the orchestrator -- it never calls tools directly.
     """
 
     def __init__(self, model_provider: ModelProvider) -> None:
