@@ -1,49 +1,37 @@
-# `make` tout court = lance la démo (front de chat). Voir `make help`.
-.DEFAULT_GOAL := run
-.PHONY: run help setup test frontend ui clean stop
+# `make` on its own starts the interface. `make help` lists the rest.
+.DEFAULT_GOAL := front
+.PHONY: front build lint ask stop clean help
 
-# Python à utiliser : le .venv du projet s'il existe, sinon python3 système.
 PY := $(shell [ -x .venv/bin/python ] && echo .venv/bin/python || echo python3)
 
-run: frontend   ## `make` = démarre le front de chat (http://localhost:8770)
+# The engine, when it is running. Left unset, the interface says so instead of
+# inventing an answer.
+ENGINE_ORIGIN ?=
 
-stop:  ## Arrête un serveur front déjà lancé (libère le port)
-	@# Motif « [a]pp… » : matche le process python, JAMAIS la ligne de
-	@# commande du pkill lui-même (sinon pkill tue son propre shell -> make
-	@# s'interrompt et le site ne se lance pas).
-	@pkill -f "[a]pp.server" 2>/dev/null && echo "ancien serveur arrêté" || echo "aucun serveur à arrêter"
+front: stop  ## Start the interface on http://localhost:3000
+	@echo "→ http://localhost:3000  (Ctrl+C to stop)"
+	@[ -n "$(ENGINE_ORIGIN)" ] \
+		&& echo "  engine: $(ENGINE_ORIGIN)" \
+		|| echo "  no engine: set ENGINE_ORIGIN=http://host:port to connect one"
+	@cd front && [ -d node_modules ] || npm install
+	@cd front && ENGINE_ORIGIN=$(ENGINE_ORIGIN) npm run dev
 
-frontend: stop  ## Front de chat futuriste (Claude par défaut)
-	@echo "→ http://localhost:8770  (Ctrl+C pour arrêter)"
-	@echo "  (clé : ANTHROPIC_API_KEY dans .env ; sinon « moteur non connecté »)"
-	@sleep 1
-	$(PY) -m app.server
+ask:  ## Run the medical pipeline from the shell: make ask Q="your question"
+	@[ -n "$(Q)" ] || (echo 'usage: make ask Q="your question"' && exit 1)
+	$(PY) -m scripts.ask_medical "$(Q)"
 
-ui:  ## Démonstrateur historique (http://localhost:8765)
-	$(PY) -m ui.server
+build:  ## Production build of the interface
+	@cd front && [ -d node_modules ] || npm install
+	@cd front && npm run build
 
-test:  ## Lance pytest (195 tests attendus)
-	$(PY) -m pytest -q
+lint:  ## Types and lint on the interface
+	@cd front && npx tsc --noEmit && npx eslint . --max-warnings=0
 
-setup:  ## (1re fois seulement) crée .venv + installe les dépendances
-	python3 -m venv .venv
-	.venv/bin/pip install -e ".[test]"
-	@echo "Prêt. Colle ta clé dans .env, puis lance : make"
+stop:  ## Free the port if an interface is already running
+	@pkill -f "[n]ext dev" 2>/dev/null && echo "stopped the running interface" || true
 
-clean:  ## Nettoie caches et artefacts (garde .venv)
-	@find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
-	@find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
-	@find . -type f -name "*.pyc" -delete 2>/dev/null || true
-	@rm -rf build dist .pytest_cache .coverage 2>/dev/null || true
-	@echo "Nettoyé"
+clean:  ## Remove build output and dependencies
+	@rm -rf front/.next front/node_modules
 
-help:  ## Affiche cette aide
-	@echo "Hallucide — commandes make :"
-	@echo "  make          → lance la démo (front de chat, port 8770)"
-	@echo "  make test     → 195 tests"
-	@echo "  make ui       → démonstrateur historique (port 8765)"
-	@echo "  make setup    → 1re installation (.venv + dépendances)"
-	@echo "  make clean    → nettoie les caches"
-	@echo ""
-	@echo "Python utilisé : $(PY)"
-	@echo "Avant la démo : colle ta clé dans .env (ANTHROPIC_API_KEY=...)"
+help:  ## List targets
+	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*## /\t/' | expand -t 12

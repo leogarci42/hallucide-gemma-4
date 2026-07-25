@@ -1,0 +1,291 @@
+.wrap {
+  width: 100%;
+  display: grid;
+  justify-items: center;
+  gap: 2.4rem;
+}
+
+.svg {
+  width: 100%;
+  height: auto;
+}
+
+.wire {
+  stroke: var(--line-soft);
+  stroke-width: 1;
+  fill: none;
+}
+
+.wireDashed {
+  stroke: var(--line-soft);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+  fill: none;
+}
+
+.box {
+  color: var(--fg);
+}
+
+.boxMuted {
+  color: var(--muted);
+}
+
+.plate {
+  fill: var(--bg);
+  stroke-width: 1;
+}
+
+.boxMuted .plate {
+  stroke: var(--line-soft);
+}
+
+.step {
+  fill: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+
+.title {
+  fill: currentColor;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.sub {
+  fill: var(--muted);
+  font-size: 11.5px;
+}
+
+.caption {
+  text-align: center;
+  font-size: 1.3rem;
+  line-height: 1.55;
+  color: var(--muted);
+  max-width: 62ch;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot {
+    display: none;
+  }
+}
+
+/* the two ends of the exchange read a shade stronger than the machinery */
+.boxOutput {
+  color: var(--fg);
+}
+
+.boxOutput .plate {
+  stroke: var(--line);
+  stroke-width: 1.6;
+}
+
+.boxOutput .sub {
+  fill: var(--fg);
+}
+
+/* the plate behind each card, alien.club's stacked look */
+.plateBack {
+  fill: var(--bg);
+  stroke-width: 1;
+}
+
+/* who runs the step */
+.ownerGemma .plate,
+.ownerGemma .plateBack {
+  stroke-width: 2.4;
+}
+
+.ownerAlien .plate {
+  stroke: var(--alien);
+  stroke-width: 2.4;
+}
+
+/* the plate behind sits back a step */
+.ownerGemma .plateBack {
+  opacity: 0.4;
+}
+
+/* the label stays a fixed colour; the sweep belongs to the border */
+.ownerGemma .sub {
+  fill: #4285f4;
+}
+
+.ownerAlien .sub {
+  fill: var(--alien);
+}
+
+/* datasets the router chooses between */
+.datasets rect {
+  fill: var(--bg);
+  stroke: var(--line-soft);
+  stroke-width: 1;
+}
+
+.datasets text {
+  fill: var(--muted);
+  font-size: 11px;
+}
+
+.dataset {
+  color: var(--muted);
+}
+
+
+
+
+.lit {
+  fill: none;
+  stroke-width: 3;
+  filter: drop-shadow(0 0 6px currentColor);
+}
+
+/* The theme crossfade in globals.css transitions fill and stroke on every
+   element. On these it would smear the SMIL colour changes and lag them by a
+   third of a second, so they opt out. */
+.dot,
+.lit {
+  transition: none;
+}
+
+/* a step is openable */
+.hit {
+  cursor: pointer;
+}
+
+.hit:hover .plate {
+  filter: brightness(1.35);
+}
+
+.hit:focus-visible {
+  outline: none;
+}
+
+.hit:focus-visible .plate {
+  filter: brightness(1.6);
+}
+
+/* the step sheet */
+
+
+
+
+
+
+
+
+
+
+
+
+/* ── step dialog ──────────────────────────────────────────────────── */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 2.4rem;
+  background: color-mix(in srgb, #000 78%, transparent);
+  animation: scrimIn 0.15s ease-out;
+}
+
+@keyframes scrimIn {
+  from {
+    opacity: 0;
+  }
+}
+
+.sheet {
+  position: relative;
+  width: min(52rem, 100%);
+  max-height: min(76vh, 62rem);
+  overflow-y: auto;
+  display: grid;
+  gap: 0.8rem;
+  padding: 2.4rem;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  background: var(--bg);
+  box-shadow:
+    var(--glow),
+    0 2.4rem 5rem rgba(0, 0, 0, 0.5);
+  animation: sheetIn 0.18s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@keyframes sheetIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+.sheetX {
+  position: absolute;
+  top: 1.4rem;
+  right: 1.4rem;
+  width: 2.8rem;
+  height: 2.8rem;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 0;
+  border-radius: var(--radius);
+  font-size: 1.9rem;
+  line-height: 1;
+  color: var(--muted);
+  opacity: 0.7;
+  transition:
+    opacity 0.2s cubic-bezier(0.23, 1, 0.32, 1),
+    background-color 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.sheetX:hover {
+  opacity: 1;
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.sheetStep {
+  font-size: 1.05rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.sheetTitle {
+  font-size: 1.9rem;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  padding-right: 3rem;
+}
+
+.sheetSub {
+  font-size: 1.3rem;
+  color: var(--muted);
+}
+
+.sheetBody {
+  margin-top: 0.8rem;
+  font-size: 1.45rem;
+  line-height: 1.6;
+  color: var(--dim);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scrim,
+  .sheet {
+    animation: none;
+  }
+}
+
+.titleTwo {
+  fill: currentColor;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}

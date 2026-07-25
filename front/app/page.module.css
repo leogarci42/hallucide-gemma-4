@@ -1,0 +1,166 @@
+.frame {
+  position: fixed;
+  inset: 1.4rem;
+  border: 1px solid var(--line);
+  box-shadow: var(--glow), inset var(--glow);
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* One grid for both columns, so the top and bottom rules are the same two
+   lines rather than four lines that happen to look similar. */
+.app {
+  height: 100vh;
+  padding: 1.4rem;
+  display: grid;
+  grid-template-columns: 27rem 1fr;
+  grid-template-rows: auto 1fr auto;
+  min-height: 0;
+}
+
+.chat {
+  grid-column: 2;
+  grid-row: 1 / -1;
+  display: grid;
+  grid-template-rows: subgrid;
+  min-height: 0;
+  min-width: 0; /* a grid item otherwise refuses to shrink below its content */
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem 1.6rem;
+  flex-wrap: wrap;
+  padding: 2.2rem 3.2rem;
+  border-bottom: 1px solid var(--line);
+  box-shadow: var(--glow);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.head h1 {
+  font-size: 1.4rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notice {
+  font-size: 1.15rem;
+  color: var(--pending);
+}
+
+.statusIdle,
+.statusOn,
+.statusOff {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-size: 1.15rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.statusDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex: none;
+  background: currentColor;
+}
+
+.statusOn {
+  color: var(--grounded);
+}
+
+.statusOff {
+  color: var(--unsupported);
+}
+
+.statusOn .statusDot,
+.statusOff .statusDot {
+  box-shadow: 0 0 6px currentColor;
+}
+
+/* The diagram must always fit: no scrollbar appears until there is a
+   conversation to scroll through. */
+.stream {
+  flex: 1;
+  overflow: hidden;
+  padding: 0.8rem 2rem;
+  min-height: 0;
+  display: grid;
+  /* the diagram sits at the top rather than floating in the middle */
+  place-items: start center;
+}
+
+.streamScroll {
+  overflow-y: auto;
+}
+
+.stream::-webkit-scrollbar {
+  width: 3px;
+}
+
+.stream::-webkit-scrollbar-thumb {
+  background: var(--line-soft);
+}
+
+.turns {
+  width: 100%;
+  align-self: start;
+}
+
+@media (max-width: 860px) {
+  .app {
+    grid-template-columns: 1fr;
+  }
+
+  .chat {
+    grid-column: 1;
+  }
+
+  .head,
+  .stream {
+    padding-left: 1.6rem;
+    padding-right: 1.6rem;
+  }
+}
+
+.menu {
+  display: none;
+  background: none;
+  border: 1px solid var(--line-soft);
+  border-radius: 3px;
+  font-size: 1.15rem;
+  padding: 0.5rem 1rem;
+  color: var(--muted);
+}
+
+.menu:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.scrim {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  border: 0;
+}
+
+@media (max-width: 860px) {
+  .menu,
+  .scrim {
+    display: block;
+  }
+}
