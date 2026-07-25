@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ApiError, Turn as TurnData, Verdict } from "@/lib/types";
+import type { ApiError, Claim, Turn as TurnData, Verdict } from "@/lib/types";
 import styles from "./turn.module.css";
 
 const VERDICT_LABEL: Record<Verdict, string> = {
@@ -81,6 +81,79 @@ function ErrorNotice({
       </div>
       {open && error.detail && <pre className={styles.detail}>{error.detail}</pre>}
     </div>
+  );
+}
+
+/* One claim: the dot and the sentence are the whole row. Everything that
+   justifies the verdict — which passage, which lane passed — sits behind the
+   disclosure, so the answer reads as an answer and the evidence is one click
+   away when someone wants to audit it. */
+function ClaimRow({ claim }: { claim: Claim }) {
+  const lanes = claim.semanticPass !== undefined || claim.literalPass !== undefined;
+  const note = CLAIM_NOTE[claim.status];
+  const hasDetail = Boolean(claim.source) || lanes || Boolean(note);
+
+  const label = (
+    <>
+      <span className={styles.claimMark} aria-hidden />
+      <span className={styles.claimText}>{claim.text}</span>
+    </>
+  );
+
+  /* No source, no lanes, nothing to say: a plain row rather than a disclosure
+     that opens onto nothing. */
+  if (!hasDetail) {
+    return (
+      <li className={CLAIM_CLASS[claim.status]}>
+        <div className={styles.claimSummary}>{label}</div>
+      </li>
+    );
+  }
+
+  return (
+    <li className={CLAIM_CLASS[claim.status]}>
+      <details className={styles.claimDetails}>
+        <summary className={styles.claimSummary}>
+          {label}
+          <span className={styles.claimChevron} aria-hidden />
+        </summary>
+
+        <div className={styles.claimBody}>
+          {claim.source ? (
+            <p className={styles.claimSource}>
+              {claim.source.url ? (
+                <a href={claim.source.url} target="_blank" rel="noreferrer noopener">
+                  {claim.source.title}
+                </a>
+              ) : (
+                claim.source.title
+              )}
+            </p>
+          ) : (
+            note && <p className={styles.claimSource}>{note}</p>
+          )}
+
+          {claim.source && note && <p className={styles.claimSource}>{note}</p>}
+
+          {lanes && (
+            <p className={styles.lanes}>
+              <span>
+                semantic{" "}
+                {claim.semanticPass === undefined ? "n/a" : claim.semanticPass ? "pass" : "fail"}
+              </span>
+              <span>
+                figures{" "}
+                {claim.literalPass === undefined ? "n/a" : claim.literalPass ? "pass" : "fail"}
+              </span>
+            </p>
+          )}
+
+          {claim.source?.passage && (
+            <blockquote className={styles.passage}>{claim.source.passage}</blockquote>
+          )}
+        </div>
+      </details>
+    </li>
   );
 }
 
@@ -202,50 +275,16 @@ export default function Turn({
             </div>
           ) : (
             <div className={styles.body}>
-              {s.answer.verified && <p className={styles.verified}>{s.answer.verified}</p>}
-
+              {/* The claims ARE the answer: the checked prose is the same
+                  sentences concatenated, so printing both said everything
+                  twice. Each row carries its own verdict; open one to see the
+                  passage and the lanes it was judged on. */}
               {s.answer.claims.length > 0 ? (
-                <>
-                <p className={styles.sectionLabel}>
-                  {s.answer.claims.length === 1 ? "The claim behind it" : "The claims behind it"}
-                </p>
                 <ul className={styles.claims}>
                   {s.answer.claims.map((c) => (
-                    <li key={c.id} className={CLAIM_CLASS[c.status]}>
-                      <span className={styles.claimMark} aria-hidden />
-                      <div>
-                        <p className={styles.claimText}>{c.text}</p>
-                        {c.status === "grounded" && c.source ? (
-                          <p className={styles.claimSource}>
-                            {c.source.url ? (
-                              <a href={c.source.url} target="_blank" rel="noreferrer noopener">
-                                {c.source.title}
-                              </a>
-                            ) : (
-                              c.source.title
-                            )}
-                          </p>
-                        ) : (
-                          <p className={styles.claimSource}>{CLAIM_NOTE[c.status]}</p>
-                        )}
-                        {(c.semanticPass !== undefined || c.literalPass !== undefined) && (
-                          <p className={styles.lanes}>
-                            <span>
-                              semantic {c.semanticPass === undefined ? "n/a" : c.semanticPass ? "pass" : "fail"}
-                            </span>
-                            <span>
-                              figures {c.literalPass === undefined ? "n/a" : c.literalPass ? "pass" : "fail"}
-                            </span>
-                          </p>
-                        )}
-                        {c.source?.passage && (
-                          <blockquote className={styles.passage}>{c.source.passage}</blockquote>
-                        )}
-                      </div>
-                    </li>
+                    <ClaimRow key={c.id} claim={c} />
                   ))}
                 </ul>
-                </>
               ) : (
                 <p className={styles.quiet}>
                   The engine returned no claim it could stand behind.

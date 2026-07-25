@@ -199,12 +199,6 @@
   padding: 1.8rem;
 }
 
-.verified {
-  font-size: 1.5rem;
-  line-height: 1.55;
-  margin-bottom: 1.8rem;
-}
-
 .draft {
   font-size: 1.5rem;
   line-height: 1.55;
@@ -234,11 +228,53 @@
 .claimOk,
 .claimKo,
 .claimUnknown {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 1rem;
   padding-left: 1.2rem;
   border-left: 1px solid var(--line-soft);
+}
+
+/* The row: dot, sentence, chevron. Clicking anywhere on it opens the
+   evidence. */
+.claimSummary {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: 1rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.claimSummary::-webkit-details-marker {
+  display: none;
+}
+
+.claimSummary:focus-visible {
+  outline: 2px solid var(--muted);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+/* A row with nothing behind it is not clickable and must not pretend to be. */
+div.claimSummary {
+  cursor: default;
+  grid-template-columns: auto 1fr;
+}
+
+.claimChevron {
+  width: 0;
+  height: 0;
+  margin-top: 0.75rem;
+  border-left: 5px solid var(--muted);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  transition: transform 0.15s ease;
+}
+
+.claimDetails[open] .claimChevron {
+  transform: rotate(90deg);
+}
+
+.claimBody {
+  padding: 0.8rem 0 0.2rem 1.9rem;
 }
 
 .claimMark {
