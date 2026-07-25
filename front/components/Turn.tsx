@@ -279,6 +279,9 @@ export default function Turn({
             {s.answer.contextPassages !== undefined && (
               <span>{s.answer.contextPassages} passages injected</span>
             )}
+            {s.answer.contextChars !== undefined && (
+              <span>{s.answer.contextChars.toLocaleString("en-US")} context characters</span>
+            )}
             {s.answer.contextTokens !== undefined && (
               <span>{s.answer.contextTokens.toLocaleString("en-US")} context tokens</span>
             )}
