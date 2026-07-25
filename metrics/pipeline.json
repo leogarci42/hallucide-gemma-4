@@ -1,0 +1,283 @@
+{
+  "arm": "pipeline",
+  "bridge": "http://localhost:8100",
+  "model": "google/gemma-4-E4B-it",
+  "producedBy": "scripts/measure_pipeline.py",
+  "outOfCorpus": {
+    "refused": "10/10",
+    "publishedSomething": "0/10"
+  },
+  "inCorpus": {
+    "refused": "0/10",
+    "publishedSomething": "4/10"
+  },
+  "errors": 0,
+  "elapsedSeconds": 91.5,
+  "rows": [
+    {
+      "question": "How effective is immunotherapy in non-small cell lung cancer?",
+      "inCorpus": true,
+      "verdict": "partial",
+      "dataset": "Oncology",
+      "claims": 19,
+      "claimsByStatus": {
+        "hallucinated": 17,
+        "grounded": 2
+      },
+      "publishedChars": 425,
+      "sources": 19,
+      "error": null,
+      "seconds": 15.4
+    },
+    {
+      "question": "Does early screening reduce colorectal cancer mortality?",
+      "inCorpus": true,
+      "verdict": "partial",
+      "dataset": "Oncology",
+      "claims": 5,
+      "claimsByStatus": {
+        "hallucinated": 2,
+        "grounded": 3
+      },
+      "publishedChars": 769,
+      "sources": 9,
+      "error": null,
+      "seconds": 8.4
+    },
+    {
+      "question": "What effect do statins have on the risk of myocardial infarction?",
+      "inCorpus": true,
+      "verdict": "unsupported",
+      "dataset": "Cardiovascular_Medicine",
+      "claims": 4,
+      "claimsByStatus": {
+        "hallucinated": 4
+      },
+      "publishedChars": 0,
+      "sources": 6,
+      "error": null,
+      "seconds": 5.1
+    },
+    {
+      "question": "Does untreated hypertension increase the risk of stroke?",
+      "inCorpus": true,
+      "verdict": "partial",
+      "dataset": "Cardiovascular_Medicine",
+      "claims": 4,
+      "claimsByStatus": {
+        "grounded": 2,
+        "hallucinated": 2
+      },
+      "publishedChars": 407,
+      "sources": 10,
+      "error": null,
+      "seconds": 6.7
+    },
+    {
+      "question": "Which treatments slow the progression of Alzheimer's disease?",
+      "inCorpus": true,
+      "verdict": "partial",
+      "dataset": "Neurology",
+      "claims": 15,
+      "claimsByStatus": {
+        "grounded": 9,
+        "hallucinated": 4,
+        "unverifiable": 2
+      },
+      "publishedChars": 2013,
+      "sources": 17,
+      "error": null,
+      "seconds": 22.2
+    },
+    {
+      "question": "Does deep brain stimulation help in Parkinson's disease?",
+      "inCorpus": true,
+      "verdict": "unsupported",
+      "dataset": "Neurology",
+      "claims": 15,
+      "claimsByStatus": {
+        "hallucinated": 15
+      },
+      "publishedChars": 0,
+      "sources": 10,
+      "error": null,
+      "seconds": 10.5
+    },
+    {
+      "question": "How effective are antivirals against seasonal influenza?",
+      "inCorpus": true,
+      "verdict": "unsupported",
+      "dataset": "Infectious_Diseases_(except_HIV_AIDS)",
+      "claims": 2,
+      "claimsByStatus": {
+        "hallucinated": 2
+      },
+      "publishedChars": 0,
+      "sources": 6,
+      "error": null,
+      "seconds": 4.2
+    },
+    {
+      "question": "Does vaccination reduce tuberculosis transmission?",
+      "inCorpus": true,
+      "verdict": "unsupported",
+      "dataset": "Infectious_Diseases_(except_HIV_AIDS)",
+      "claims": 2,
+      "claimsByStatus": {
+        "hallucinated": 2
+      },
+      "publishedChars": 0,
+      "sources": 10,
+      "error": null,
+      "seconds": 5.2
+    },
+    {
+      "question": "Does metformin reduce complications in type 2 diabetes?",
+      "inCorpus": true,
+      "verdict": "unsupported",
+      "dataset": "Endocrinology",
+      "claims": 4,
+      "claimsByStatus": {
+        "hallucinated": 4
+      },
+      "publishedChars": 0,
+      "sources": 10,
+      "error": null,
+      "seconds": 4.2
+    },
+    {
+      "question": "What are the effects of thyroxine on hypothyroidism?",
+      "inCorpus": true,
+      "verdict": "unsupported",
+      "dataset": "Endocrinology",
+      "claims": 4,
+      "claimsByStatus": {
+        "hallucinated": 4
+      },
+      "publishedChars": 0,
+      "sources": 6,
+      "error": null,
+      "seconds": 4.6
+    },
+    {
+      "question": "What will the weather be in Paris tomorrow?",
+      "inCorpus": false,
+      "verdict": "refused",
+      "dataset": null,
+      "claims": 0,
+      "claimsByStatus": {},
+      "publishedChars": 0,
+      "sources": 0,
+      "error": null,
+      "seconds": 0.4
+    },
+    {
+      "question": "What is the statutory notice period for resigning in France?",
+      "inCorpus": false,
+      "verdict": "refused",
+      "dataset": null,
+      "claims": 0,
+      "claimsByStatus": {},
+      "publishedChars": 0,
+      "sources": 0,
+      "error": null,
+      "seconds": 0.5
+    },
+    {
+      "question": "How do you make choux pastry?",
+      "inCorpus": false,
+      "verdict": "refused",
+      "dataset": null,
+      "claims": 0,
+      "claimsByStatus": {},
+      "publishedChars": 0,
+      "sources": 0,
+      "error": null,
+      "seconds": 0.5
+    },
+    {
+      "question": "Who won the Champions League in 2024?",
+      "inCorpus": false,
+      "verdict": "refused",
+      "dataset": null,
+      "claims": 0,
+      "claimsByStatus": {},
+      "publishedChars": 0,
+      "sources": 0,
+      "error": null,
+      "seconds": 0.5
+    },
+    {
+      "question": "How do I configure nginx as a reverse proxy?",
+      "inCorpus": false,
+      "verdict": "refused",
+      "dataset": null,
+      "claims": 0,
+      "claimsByStatus": {},
+      "publishedChars": 0,
+      "sources": 0,
+      "error": null,
+      "seconds": 0.5
+    },
+    {
+      "question": "What is the average price per square metre in Lyon?",
+      "inCorpus": false,
+      "verdict": "refused",
+      "dataset": null,
+      "claims": 0,
+      "claimsByStatus": {},
+      "publishedChars": 0,
+      "sources": 0,
+      "error": null,
+      "seconds": 0.5
+    },
+    {
+      "question": "What are the offside rules in football?",
+      "inCorpus": false,
+      "verdict": "refused",
+      "dataset": null,
+      "claims": 0,
+      "claimsByStatus": {},
+      "publishedChars": 0,
+      "sources": 0,
+      "error": null,
+      "seconds": 0.5
+    },
+    {
+      "question": "How do I declare rental income on my tax return?",
+      "inCorpus": false,
+      "verdict": "refused",
+      "dataset": null,
+      "claims": 0,
+      "claimsByStatus": {},
+      "publishedChars": 0,
+      "sources": 0,
+      "error": null,
+      "seconds": 0.5
+    },
+    {
+      "question": "What is the capital of Australia?",
+      "inCorpus": false,
+      "verdict": "refused",
+      "dataset": null,
+      "claims": 0,
+      "claimsByStatus": {},
+      "publishedChars": 0,
+      "sources": 0,
+      "error": null,
+      "seconds": 0.5
+    },
+    {
+      "question": "How do I replace a timing belt?",
+      "inCorpus": false,
+      "verdict": "refused",
+      "dataset": null,
+      "claims": 0,
+      "claimsByStatus": {},
+      "publishedChars": 0,
+      "sources": 0,
+      "error": null,
+      "seconds": 0.5
+    }
+  ]
+}

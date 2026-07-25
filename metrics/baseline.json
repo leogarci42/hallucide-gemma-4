@@ -1,8 +1,6 @@
 {
   "endpoint": "http://localhost:8000/v1",
   "model": "google/gemma-4-E4B-it",
-  "ranOn": "NVIDIA Brev, vLLM, max_model_len 131072",
-  "producedBy": "scripts/measure_standalone.py",
   "domains": [
     "Oncology",
     "Cardiovascular_Medicine",
@@ -12,16 +10,16 @@
   ],
   "routed": {
     "refusedOutOfCorpus": "10/10",
-    "refusedInCorpus": "1/10"
+    "refusedInCorpus": "0/10"
   },
   "baseline": {
-    "answeredOutOfCorpus": "10/10",
+    "answeredOutOfCorpus": "8/10",
     "answeredInCorpus": "10/10"
   },
-  "elapsedSeconds": 33.3,
+  "elapsedSeconds": 53.3,
   "rows": [
     {
-      "question": "Quelle est l'efficacité de l'immunothérapie dans le cancer du poumon ?",
+      "question": "How effective is immunotherapy in non-small cell lung cancer?",
       "inCorpus": true,
       "routedTo": "Oncology",
       "routedRefused": false,
@@ -29,7 +27,7 @@
       "baselineAnswered": true
     },
     {
-      "question": "Le dépistage précoce réduit-il la mortalité du cancer colorectal ?",
+      "question": "Does early screening reduce colorectal cancer mortality?",
       "inCorpus": true,
       "routedTo": "Oncology",
       "routedRefused": false,
@@ -37,7 +35,7 @@
       "baselineAnswered": true
     },
     {
-      "question": "Quels sont les effets des statines sur le risque d'infarctus ?",
+      "question": "What effect do statins have on the risk of myocardial infarction?",
       "inCorpus": true,
       "routedTo": "Cardiovascular_Medicine",
       "routedRefused": false,
@@ -45,7 +43,7 @@
       "baselineAnswered": true
     },
     {
-      "question": "L'hypertension non traitée augmente-t-elle le risque d'AVC ?",
+      "question": "Does untreated hypertension increase the risk of stroke?",
       "inCorpus": true,
       "routedTo": "Cardiovascular_Medicine",
       "routedRefused": false,
@@ -53,15 +51,7 @@
       "baselineAnswered": true
     },
     {
-      "question": "Quels traitements ralentissent la progression de la maladie d'Alzheimer ?",
-      "inCorpus": true,
-      "routedTo": null,
-      "routedRefused": true,
-      "routingError": null,
-      "baselineAnswered": true
-    },
-    {
-      "question": "La stimulation cérébrale profonde aide-t-elle dans la maladie de Parkinson ?",
+      "question": "Which treatments slow the progression of Alzheimer's disease?",
       "inCorpus": true,
       "routedTo": "Neurology",
       "routedRefused": false,
@@ -69,7 +59,15 @@
       "baselineAnswered": true
     },
     {
-      "question": "Quelle est l'efficacité des antiviraux contre la grippe saisonnière ?",
+      "question": "Does deep brain stimulation help in Parkinson's disease?",
+      "inCorpus": true,
+      "routedTo": "Neurology",
+      "routedRefused": false,
+      "routingError": null,
+      "baselineAnswered": true
+    },
+    {
+      "question": "How effective are antivirals against seasonal influenza?",
       "inCorpus": true,
       "routedTo": "Infectious_Diseases_(except_HIV_AIDS)",
       "routedRefused": false,
@@ -77,7 +75,7 @@
       "baselineAnswered": true
     },
     {
-      "question": "La vaccination réduit-elle la transmission de la tuberculose ?",
+      "question": "Does vaccination reduce tuberculosis transmission?",
       "inCorpus": true,
       "routedTo": "Infectious_Diseases_(except_HIV_AIDS)",
       "routedRefused": false,
@@ -85,7 +83,7 @@
       "baselineAnswered": true
     },
     {
-      "question": "La metformine réduit-elle les complications du diabète de type 2 ?",
+      "question": "Does metformin reduce complications in type 2 diabetes?",
       "inCorpus": true,
       "routedTo": "Endocrinology",
       "routedRefused": false,
@@ -93,7 +91,7 @@
       "baselineAnswered": true
     },
     {
-      "question": "Quels sont les effets de la thyroxine sur l'hypothyroïdie ?",
+      "question": "What are the effects of thyroxine on hypothyroidism?",
       "inCorpus": true,
       "routedTo": "Endocrinology",
       "routedRefused": false,
@@ -101,7 +99,15 @@
       "baselineAnswered": true
     },
     {
-      "question": "Quel temps fera-t-il demain à Paris ?",
+      "question": "What will the weather be in Paris tomorrow?",
+      "inCorpus": false,
+      "routedTo": null,
+      "routedRefused": true,
+      "routingError": null,
+      "baselineAnswered": false
+    },
+    {
+      "question": "What is the statutory notice period for resigning in France?",
       "inCorpus": false,
       "routedTo": null,
       "routedRefused": true,
@@ -109,7 +115,7 @@
       "baselineAnswered": true
     },
     {
-      "question": "Quelle est la durée légale du préavis de démission en France ?",
+      "question": "How do you make choux pastry?",
       "inCorpus": false,
       "routedTo": null,
       "routedRefused": true,
@@ -117,7 +123,7 @@
       "baselineAnswered": true
     },
     {
-      "question": "Comment réussir une pâte à choux ?",
+      "question": "Who won the Champions League in 2024?",
       "inCorpus": false,
       "routedTo": null,
       "routedRefused": true,
@@ -125,7 +131,7 @@
       "baselineAnswered": true
     },
     {
-      "question": "Qui a gagné la Ligue des champions en 2024 ?",
+      "question": "How do I configure nginx as a reverse proxy?",
       "inCorpus": false,
       "routedTo": null,
       "routedRefused": true,
@@ -133,7 +139,15 @@
       "baselineAnswered": true
     },
     {
-      "question": "Comment configurer un serveur nginx en reverse proxy ?",
+      "question": "What is the average price per square metre in Lyon?",
+      "inCorpus": false,
+      "routedTo": null,
+      "routedRefused": true,
+      "routingError": null,
+      "baselineAnswered": false
+    },
+    {
+      "question": "What are the offside rules in football?",
       "inCorpus": false,
       "routedTo": null,
       "routedRefused": true,
@@ -141,7 +155,7 @@
       "baselineAnswered": true
     },
     {
-      "question": "Quel est le prix moyen du mètre carré à Lyon ?",
+      "question": "How do I declare rental income on my tax return?",
       "inCorpus": false,
       "routedTo": null,
       "routedRefused": true,
@@ -149,7 +163,7 @@
       "baselineAnswered": true
     },
     {
-      "question": "Quelles sont les règles du hors-jeu au football ?",
+      "question": "What is the capital of Australia?",
       "inCorpus": false,
       "routedTo": null,
       "routedRefused": true,
@@ -157,23 +171,7 @@
       "baselineAnswered": true
     },
     {
-      "question": "Comment déclarer ses revenus fonciers ?",
-      "inCorpus": false,
-      "routedTo": null,
-      "routedRefused": true,
-      "routingError": null,
-      "baselineAnswered": true
-    },
-    {
-      "question": "Quelle est la capitale de l'Australie ?",
-      "inCorpus": false,
-      "routedTo": null,
-      "routedRefused": true,
-      "routingError": null,
-      "baselineAnswered": true
-    },
-    {
-      "question": "Comment changer une courroie de distribution ?",
+      "question": "How do I replace a timing belt?",
       "inCorpus": false,
       "routedTo": null,
       "routedRefused": true,
