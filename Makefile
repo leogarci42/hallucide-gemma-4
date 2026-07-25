@@ -1,12 +1,17 @@
-# `make` on its own starts the interface. `make help` lists the rest.
-.DEFAULT_GOAL := front
+# `make` on its own starts everything: the engine bridge AND the interface.
+# `make help` lists the rest.
+.DEFAULT_GOAL := both
 .PHONY: front bridge both build lint ask measure stop clean help
 
 PY := $(shell [ -x .venv/bin/python ] && echo .venv/bin/python || echo python3)
 
+# Port 8100, not 8000: Gemma itself (vLLM/Ollama) is on 8000, and the bridge
+# runs on the same box when Gemma is served locally -- 8000 would collide.
+BRIDGE_PORT ?= 8100
+
 # The engine, when it is running. Left unset, the interface says so instead of
 # inventing an answer.
-ENGINE_ORIGIN ?=
+ENGINE_ORIGIN ?= http://localhost:$(BRIDGE_PORT)
 
 front: stop  ## Start the interface on http://localhost:3000
 	@echo "→ http://localhost:3000  (Ctrl+C to stop)"
@@ -16,11 +21,11 @@ front: stop  ## Start the interface on http://localhost:3000
 	@cd front && [ -d node_modules ] || npm install
 	@cd front && ENGINE_ORIGIN=$(ENGINE_ORIGIN) npm run dev
 
-bridge:  ## Serve the engine over HTTP on port 8000, which is what the interface reads
-	$(PY) bridge.py
+bridge:  ## Serve the engine over HTTP on BRIDGE_PORT (default 8100)
+	PORT=$(BRIDGE_PORT) $(PY) bridge.py
 
 both:  ## Engine and interface together
-	@$(MAKE) bridge & sleep 2; ENGINE_ORIGIN=http://localhost:8000 $(MAKE) front
+	@$(MAKE) bridge & sleep 2; $(MAKE) front
 
 measure:  ## Measure the verifier, then the routing if a model is reachable
 	$(PY) -m scripts.measure_verifier

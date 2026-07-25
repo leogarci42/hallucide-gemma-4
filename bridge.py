@@ -84,40 +84,44 @@ def _model_reachable(timeout: float = 3.0) -> bool:
         return False
 
 
-def _claim_source(claim_ref: str, passage: Any) -> dict[str, Any] | None:
+def _matched_chunk(claim_ref: str, passage: Any) -> dict[str, Any] | None:
     """The individual chunk a claim was matched against, when the retrieval
-    provider kept them. Falls back to the whole passage, and to nothing at all
-    rather than pointing at a chunk that does not contain the claim."""
+    provider kept them. `None` when no chunk metadata exists or none of them
+    contain the claim -- callers fall back to the whole passage."""
     chunks = (passage.metadata or {}).get("chunks") or []
     needle = normalize_text(claim_ref)
-
     for chunk in chunks:
         text = chunk.get("text", "")
         if needle and needle in normalize_text(text):
-            entry = chunk.get("entry_id") or passage.source_id
-            return {
-                "id": str(entry),
-                "title": f"{passage.source_type} · {entry}",
-                "passage": text,
-            }
-
-    if not chunks:
-        return {
-            "id": passage.source_id,
-            "title": f"{passage.source_type} · {passage.source_id}",
-            "passage": passage.text,
-        }
+            return chunk
     return None
+
+
+def _claim_source(passage: Any, chunk: dict[str, Any] | None) -> dict[str, Any]:
+    if chunk is not None:
+        entry = chunk.get("entry_id") or passage.source_id
+        return {"id": str(entry), "title": f"{passage.source_type} · {entry}", "passage": chunk["text"]}
+    return {
+        "id": passage.source_id,
+        "title": f"{passage.source_type} · {passage.source_id}",
+        "passage": passage.text,
+    }
 
 
 def _map_claim(index: int, claim: Any, passage: Any) -> dict[str, Any]:
     """One engine claim in the interface's shape.
 
-    - the literal check (7b) is the engine's deterministic verbatim check
-    - the semantic check (7a) is the engine's similarity score against the
-      passage, on the same threshold the risk floor uses
-    - a claim is valid only when both pass, which is the aggregation the
-      interface displays
+    - the literal check (7b) is the engine's deterministic verbatim check --
+      authoritative on its own once it passes (§2/§7 of the engine: the
+      verdict comes from the source, verbatim is the strongest signal there
+      is). The semantic check never downgrades a verbatim-confirmed claim.
+    - the semantic check (7a) only decides the outcome for a reformulation
+      (INTERPRÉTATION), where no verbatim match exists to rely on. It is
+      scored against the SPECIFIC chunk the claim matched, never the whole
+      aggregated RAG-massif passage (many chunks concatenated) -- comparing
+      one sentence to 8-10 concatenated studies dilutes the score below
+      threshold even for an exact quote, which was flagging genuine verbatim
+      matches as unverifiable/hallucinated.
     """
     if claim.status in _VERBATIM_PASS:
         literal_pass: bool | None = True
@@ -126,12 +130,14 @@ def _map_claim(index: int, claim: Any, passage: Any) -> dict[str, Any]:
     else:
         literal_pass = None  # reformulation: the check could not settle it
 
-    semantic_pass = similarity_score(claim.ref, passage.text) >= DEFAULT_DISTANCE_THRESHOLD
+    chunk = _matched_chunk(claim.ref, passage)
+    scoring_text = chunk["text"] if chunk is not None else passage.text
+    semantic_pass = similarity_score(claim.ref, scoring_text) >= DEFAULT_DISTANCE_THRESHOLD
 
-    if literal_pass is None:
-        status = "unverifiable"
-    elif literal_pass and semantic_pass:
+    if literal_pass:
         status = "grounded"
+    elif literal_pass is None:
+        status = "grounded" if semantic_pass else "unverifiable"
     else:
         status = "hallucinated"
 
@@ -142,7 +148,7 @@ def _map_claim(index: int, claim: Any, passage: Any) -> dict[str, Any]:
         "semanticPass": semantic_pass,
         "literalPass": literal_pass,
     }
-    source = _claim_source(claim.ref, passage) if status == "grounded" else None
+    source = _claim_source(passage, chunk) if status in ("grounded", "unverifiable") else None
     if source:
         out["source"] = source
     return out
