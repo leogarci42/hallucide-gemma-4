@@ -12,7 +12,7 @@ Nothing in src/ is touched: the closed domain list, the dataset ids and the
 retrieval wiring are imported from scripts/ask_medical.py, so a change there
 carries over here.
 
-    python bridge.py            # port 8000
+    python bridge.py            # port 8080
     PORT=9000 python bridge.py
 
 It answers 503 rather than serving anything invented: no model backend, no
@@ -55,7 +55,7 @@ from hallucide.verification.semantic_similarity import (  # noqa: E402
     similarity_score,
 )
 
-PORT = int(os.environ.get("PORT", "8000"))
+PORT = int(os.environ.get("PORT", "8080"))
 MODEL_BASE_URL = os.environ.get("MODEL_BASE_URL", "http://localhost:8000/v1")
 MODEL_NAME = os.environ.get("MODEL_NAME", "google/gemma-4-E4B-it")
 MAX_QUESTION_CHARS = 600
