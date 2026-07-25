@@ -1,107 +1,147 @@
-# Hallucide
+# Alien Hallucination
 
-Hallucide vérifie les réponses d'une IA générative contre les sources officielles.
-La réponse est découpée en affirmations élémentaires ; chaque affirmation est
-confrontée mot pour mot au passage officiel récupéré (open data du Parlement,
-codes consolidés, data.gouv.fr). L'utilisateur ne reçoit jamais une affirmation
-non vérifiée présentée comme un fait : le verdict vient de la source, jamais du modèle.
+A local **Gemma 4** answers medical questions from research corpora served by
+**Alien Intelligence**, and every sentence it writes is checked against the
+passage it came from. Anything that does not hold is withheld and labelled, so
+an unverified claim is never presented as a fact.
 
-Le moteur de vérification s'appelle Hallucide (`src/`). C'est un pipeline
-déterministe : décomposition de la question, récupération des passages officiels,
-vérification verbatim, plancher de risque, validation humaine, journal d'audit.
-Spécification et statut d'implémentation : PDF dans `hackathon-an-2026/docs/`.
+Built at the Gemma 4 Hackathon, 42 Paris, 25 July 2026, for the **Context
+Engineering for SLMs** track.
 
-Projet du hackathon de l'Assemblée nationale 2026, défi « IA et Hallucination » :
-voir `hackathon-an-2026/DEFI.md`.
+## The pipeline
 
-## Démarrage rapide
+```
+ 1  prompt                        the user asks something
+ 2  routing        Gemma          picks a domain from a closed list of Alien
+                                  datasets, or answers none. A code guard also
+                                  rejects any answer outside the list. Either
+                                  way the pipeline stops and the question is
+                                  refused
+ 3  search         Alien          semantic search inside the chosen dataset,
+                                  returning many candidate passages
+ 4  injection                     those passages go into Gemma's prompt, which
+                                  is told to answer from them and nothing else
+ 5  generation     Gemma          drafts an answer from those passages
+ 6  decomposition  Gemma          re-reads its own answer in the same context
+                                  window and cuts it into claims, one sentence
+                                  each
+ 7a semantic check                is the claim close enough to a source
+                                  passage? a score against a threshold
+ 7b literal check                 do its figures and negations hold against the
+                                  source? deterministic, no model judgement
+ 8  aggregation                   valid only if both checks pass; otherwise
+                                  hallucinated, or unverifiable when a check
+                                  could not settle it. The verdict comes from
+                                  the source, never from the model judging
+                                  itself
+ 9  output                        the answer annotated claim by claim, each one
+                                  beside the passage it was checked against,
+                                  with how much context was injected
+```
+
+Gemma 4 does the work at four of those steps: it routes, it writes, it splits
+its own answer, and it never gets to decide whether it was right. Alien
+Intelligence supplies the corpora and the retrieval.
+
+## Layout
+
+```
+front/    the interface: Next.js, TypeScript, no CSS or state framework
+back/     the verification engine: decomposition, retrieval, verbatim checking
+```
+
+## Running the interface
 
 ```bash
-make setup             # première fois : crée .venv et installe les dépendances
-cp .env.example .env   # puis coller au moins une clé API (voir Configuration)
-make                   # front de chat sur http://localhost:8770
+make front
 ```
 
-`make help` liste les autres cibles (`test`, `ui`, `stop`, `clean`).
+It runs on <http://localhost:3000> and works with no backend: it reports the
+engine as unreachable and every question fails with a retry button. Nothing is
+faked to fill the gap.
 
-## Configuration (`.env`)
-
-Au moins une clé parmi :
-
-| Variable | Fournisseur |
-|---|---|
-| `ANTHROPIC_API_KEY` | Claude, modèle par défaut du front |
-| `MISTRAL_API_KEY` | Mistral |
-| `GEMINI_API_KEY` | Gemini |
-
-Sans clé, l'interface affiche « moteur non connecté ». Rien n'est simulé.
-`.env` n'est jamais versionné : ne jamais committer de vraie clé.
-
-## Arborescence
-
-```
-app/                front de chat DSFR + backend HTTP (python -m app.server)
-src/                moteur Hallucide, rangé par étape du pipeline
-tests/              pytest (make test)
-ui/                 démonstrateur historique (python -m ui.server, port 8765)
-hackathon-an-2026/  fiche défi, documents PDF et images du hackathon
-```
-
-## Architecture
-
-```
-Client → Hallucide.ask() → Orchestrator (décompose, récupère, vérifie)
-              ├── MultiSourceRetrievalProvider
-              │     ├── MoulineuseRetrievalProvider  (normatif/parlementaire, MCP réel)
-              │     ├── DataGouvRetrievalProvider    (donnée tabulaire, MCP réel)
-              │     └── FileRetrievalProvider        (fichier CSV/ZIP non tabulaire)
-              ├── verifier.py         (contrôle verbatim déterministe, §7)
-              ├── triage.py           (plancher de risque, §2)
-              ├── human_validation.py (validation humaine, §4 étape 9)
-              └── SovereignLogStore   (journaux cloisonnés conformité/accès, §13.4)
-```
-
-## Sources réelles branchées
-
-- Moulineuse (`mcp.code4code.eu`) : articles de code consolidés, articles
-  parlementaires, questions parlementaires (QE/QOSD/QG), commissions et mandats,
-  recherche plein texte avec repli « pertinence non garantie », multi-saut réel.
-- data.gouv.fr (`mcp.data.gouv.fr`) : données chiffrées tracées à la cellule
-  exacte, statut `DONNÉE_TRACÉE`.
-- Fichiers CSV/ZIP téléchargés directement pour les ressources non indexées par
-  l'API tabulaire (couvre l'INSEE).
-- Claude, Mistral et Gemini : LLM réels pour la décomposition et la génération
-  de claims. Interchangeables, aucun ne juge sa propre fidélité.
-
-## Garanties (ce que le code prouve, pas le modèle)
-
-- Une citation publiée `AUTHENTIFIÉ` existe mot pour mot dans la source
-  officielle opposable récupérée (§7). Le vérificateur re-contrôle le cycle de
-  vie : un texte abrogé n'est jamais `AUTHENTIFIÉ`.
-- Le plancher de risque ne descend jamais sous « élevé » quand une condition
-  déterministe est détectée (§2/INV-011) : référence inférée, troncature,
-  pertinence non garantie, couverture insuffisante, sélection ambiguë, query
-  partagée entre intentions.
-- Une `INTERPRÉTATION` doit ancrer tous ses marqueurs de négation et toutes ses
-  valeurs chiffrées dans la source, en plus du recouvrement lexical.
-- L'opposabilité dérive du type de document et de son cycle de vie, jamais d'un
-  flag de requête ni du modèle (INV-010).
-- Mode document (v4, §7ter) : jamais de statut agrégé, chaque claim garde le
-  sien (INV-015) ; l'omission silencieuse d'une unité structurelle bloque la
-  publication (INV-017).
-- Une intention à risque élevé n'est jamais publiée sans décision humaine
-  explicite, capturée et journalisée (§4 étape 9).
-- Le journal de conformité ne contient jamais la question posée ni une identité
-  (§13.4), garde-fou vérifié par assertion.
-
-## Tests
+To connect the engine:
 
 ```bash
-make test
+ENGINE_ORIGIN=http://localhost:8000 make front
 ```
 
-220 tests automatisés, dont le mode document v4 (INV-015/016/017, piège B5) et
-les commissions ciblées. Deux scénarios ont aussi été joués en direct contre les
-sources réelles : prémisse fausse sans hallucination
-(`NO_ANSWER`), et passage authentique mais hors sujet bloqué par le plancher E1.
+`ENGINE_ORIGIN` is read server-side only. Two routes are proxied.
 
+| Route | Method | Body | Response |
+|---|---|---|---|
+| `/health` | GET | — | `{ "model": "gemma-4-E4B-it" }` |
+| `/ask` | POST | `{ "question": "..." }` | below |
+
+```jsonc
+{
+  "draft":    "what Gemma wrote, untouched",
+  "verified": "the same answer with the claims that failed removed",
+  "verdict":  "grounded | partial | unsupported | refused",
+  "claims": [
+    {
+      "id": "c1",
+      "text": "one sentence",
+      "status": "grounded",              // or "hallucinated" | "unverifiable"
+      "semanticPass": true,              // optional, check 7a
+      "literalPass": true,               // optional, check 7b
+      "source": {
+        "id": "...",
+        "title": "shown to the user",
+        "url": "https://...",            // optional
+        "passage": "the matched text"    // optional
+      }
+    }
+  ],
+  "model":            "gemma-4-E4B-it",  // optional
+  "dataset":          "medRxiv",         // optional, what routing chose
+  "contextPassages":  24,                // optional
+  "contextTokens":    3102,              // optional
+  "latencyMs":        2410               // optional
+}
+```
+
+`model`, `dataset`, `contextPassages`, `contextTokens` and `latencyMs` are
+optional and are shown **only when the engine sends them**. The interface never
+computes, estimates or defaults a number. A field that is missing is a field
+that is not displayed.
+
+Unknown fields are ignored, and a response that cannot be read at all is
+reported as such rather than rendered half-way. `verdict` is derived from the
+claims when absent, and a claim `status` from the two checks; if either check
+is missing the claim is treated as unverifiable rather than assumed sound.
+
+## What happens when things break
+
+A demo has to survive a flaky laptop, so failure is a designed state.
+
+- requests time out after 60s and are retried up to three times with jittered
+  exponential backoff
+- only worthwhile failures are retried: offline, unreachable, timeout, 5xx. A
+  rejected question or an unreadable response is reported, not retried
+- any question can be cancelled while it runs, and any failed or cancelled one
+  asked again from where it sits in the conversation
+- a question left running when the tab closes comes back marked cancelled
+  rather than spinning forever
+- a render fault shows a recoverable panel; conversations live in
+  `localStorage` and survive a reload
+
+## Credits and licences
+
+- **Gemma 4** — Google DeepMind, Apache 2.0. Not redistributed here.
+- **Alien Intelligence** — corpora and retrieval.
+- **Icons** — [Lucide](https://lucide.dev), ISC, inlined in
+  `front/components/icons.tsx`.
+- **Dopis** — the typeface files in `front/public/fonts` are used under the
+  licence they were supplied with.
+- **This repository** — MIT, see `LICENSE`.
+
+### Prior work
+
+The verification engine in `back/` started as **Hallucide**, an open-source
+project written by the same team for the Assemblée nationale hackathon earlier
+in 2026. Its history is public in this repository.
+
+Written during this hackathon: the routing over Alien datasets, the two checks
+and their aggregation, the whole interface in `front/`, and the contract
+between the two.

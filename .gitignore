@@ -16,7 +16,19 @@ venv/
 # Editor
 .vscode/*
 !.vscode/settings.json
-src/*.egg-info/
+back/*.egg-info/
 hallucide.egg-info/
 .DS_Store
 .vscode/
+
+# Interface
+.next/
+node_modules/
+front/node_modules/
+front/.next/
+front/out/
+front/next-env.d.ts
+front/*.tsbuildinfo
+
+# Local agent state
+.claude/

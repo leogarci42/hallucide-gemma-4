@@ -1,0 +1,90 @@
+.composer {
+  border-top: 1px solid var(--line);
+  box-shadow: var(--glow);
+  padding: 2rem 3.2rem;
+  display: flex;
+  gap: 1.2rem;
+  align-items: flex-end;
+}
+
+.field {
+  flex: 1;
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  box-shadow: var(--glow-soft);
+  transition: box-shadow 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.field:focus-within {
+  box-shadow: var(--glow);
+}
+
+.field textarea {
+  display: block;
+  width: 100%;
+  background: none;
+  border: 0;
+  resize: none;
+  font-size: 1.4rem;
+  line-height: 1.5;
+  padding: 1.2rem 1.4rem;
+  max-height: 16rem;
+}
+
+.field textarea:focus {
+  outline: none;
+}
+
+.field textarea::placeholder {
+  color: var(--muted);
+}
+
+.count {
+  position: absolute;
+  right: 1rem;
+  bottom: 0.6rem;
+  font-size: 1.05rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.send,
+.cancel {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  box-shadow: var(--glow-soft);
+  font-size: 1.3rem;
+  padding: 1.2rem 2rem;
+  transition:
+    background-color 0.2s cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.send:hover:not(:disabled),
+.cancel:hover {
+  background: var(--hover);
+}
+
+.send:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.cancel {
+  color: var(--unsupported);
+  border-color: var(--unsupported);
+}
+
+@media (max-width: 860px) {
+  .composer {
+    padding: 1.6rem;
+    gap: 0.8rem;
+  }
+
+  .send,
+  .cancel {
+    padding: 1.2rem 1.4rem;
+  }
+}

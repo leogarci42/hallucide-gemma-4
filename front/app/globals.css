@@ -1,0 +1,142 @@
+@font-face {
+  font-family: "Dopis";
+  src:
+    url(/fonts/Dopis-Regular.woff2) format("woff2"),
+    url(/fonts/Dopis-Regular.woff) format("woff");
+  font-weight: 400 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dopis";
+  src:
+    url(/fonts/Dopis-Bold.woff2) format("woff2"),
+    url(/fonts/Dopis-Bold.woff) format("woff");
+  font-weight: 600 700;
+  font-display: swap;
+}
+
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #000;
+  --panel: #0a0a0a;
+  --fg: #fff;
+  --dim: #ffffff80;
+  --muted: #868686;
+
+  --line: #fff;
+  --line-soft: #ffffff40;
+  --line-strong: #fff;
+  --glow: 0 0 8px #ffffff3d;
+  --glow-soft: 0 0 6px #ffffff26;
+  --hover: #ffffff14;
+
+  --grounded: #7fbf8f;
+  --unsupported: #e06a6a;
+  --pending: #d8c07a;
+
+  /* who does the work at each step */
+  --gemma: #086eff;
+  --alien: #56e4e6;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #fff;
+  --panel: #f7f7f5;
+  --fg: #000;
+  --dim: #00000099;
+  --muted: #6b6b6b;
+
+  --line: #000;
+  --line-soft: #00000033;
+  --line-strong: #000;
+  --glow: 0 1px 2px #0000001a;
+  --glow-soft: 0 1px 2px #00000012;
+  --hover: #00000010;
+
+  --grounded: #16713a;
+  --unsupported: #b3261e;
+  --pending: #8a6d1f;
+
+  --gemma: #086eff;
+  --alien: #1b9fa1; /* the brand cyan is unreadable on white, stepped down */
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 62.5%;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font: 400 1.4rem/1.5 "Dopis", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Every rule is themed, so the whole surface crossfades on a theme switch
+   instead of snapping. Skipped for reduced-motion by the rule further down. */
+body *,
+body {
+  transition:
+    background-color 0.35s cubic-bezier(0.23, 1, 0.32, 1),
+    border-color 0.35s cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 0.35s cubic-bezier(0.23, 1, 0.32, 1),
+    color 0.25s cubic-bezier(0.23, 1, 0.32, 1),
+    fill 0.35s cubic-bezier(0.23, 1, 0.32, 1),
+    stroke 0.35s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+::selection {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+:focus-visible {
+  outline: 2px solid var(--line-strong);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
