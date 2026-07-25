@@ -217,15 +217,6 @@ const C_BACKED = "#7fbf8f";
 const C_WITHHELD = "#e06a6a";
 const C_UNCHECKED = "#868686"; // neither check could settle it
 
-/* One sequence per dot in the output, of deliberately different lengths, so
-   the five never repeat the same arrangement twice in a row. */
-const OUTCOME_CYCLES = [
-  [C_BACKED, C_BACKED, C_WITHHELD],
-  [C_BACKED, C_UNCHECKED],
-  [C_WITHHELD, C_BACKED, C_BACKED, C_BACKED],
-  [C_BACKED, C_BACKED, C_UNCHECKED, C_BACKED, C_WITHHELD],
-  [C_UNCHECKED, C_BACKED, C_BACKED],
-];
 
 const PER_UNIT = 0.9; // seconds
 const secs = (u: number) => u * PER_UNIT;
@@ -476,7 +467,6 @@ function Box({ node, onOpen }: { node: Node; onOpen: (n: Node) => void }) {
 
 export default function Flow() {
   const v = byId.verdict;
-  const o = byId.out;
   const [open, setOpen] = useState<Node | null>(null);
 
   useEffect(() => {
@@ -663,25 +653,6 @@ export default function Flow() {
           ))}
         </g>
 
-        {/* the answer that comes out, a handful of claims with mixed outcomes.
-            SMIL has no randomness; each dot walks its own short sequence, and
-            the sequences are different lengths, so the mix keeps changing. */}
-        <g>
-          {OUTCOME_CYCLES.map((cycle, i) => (
-            <circle key={i} cx={o.x + W / 2 - 28 + i * 14} cy={o.y + H + 16} r="3.5" fill={cycle[0]}>
-              <animate
-                attributeName="fill"
-                calcMode="discrete"
-                values={[...cycle, cycle[cycle.length - 1]].join(";")}
-                keyTimes={[...cycle.map((_, k) => k / cycle.length), 1]
-                  .map((t) => t.toFixed(4))
-                  .join(";")}
-                dur={`${LAP * cycle.length}s`}
-                repeatCount="indefinite"
-              />
-            </circle>
-          ))}
-        </g>
 
 
       </svg>
