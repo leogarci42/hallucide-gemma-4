@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-"""Pipeline complet du hackathon (étages 1+2+3) -- ORDRE DE CODE §5 respecté :
-construit en couches (étage 2 en dur -> étage 3 branché -> étage 1 par-dessus
-avec fallback), mais les trois tournent maintenant ensemble. Aucune
-modification du moteur Hallucide : on réutilise Hallucide.ask() tel quel avec
-GemmaModelProvider + AlienRetrievalProvider (ou un stub si ALIEN_API_TOKEN est
-absent, pour pouvoir tester tout le câblage avant d'avoir les identifiants
-Alien réels).
+"""Pipeline complet du hackathon (étages 1+2+3), branché sur les vrais
+endpoints MCP Alien (get.alien.club/gemma4-hackathon, cluster MedRxiv).
+Aucune modification du moteur Hallucide : on réutilise Hallucide.ask() tel
+quel avec GemmaModelProvider + AlienRetrievalProvider (ou un stub si
+ALIEN_API_TOKEN est absent).
 
 Usage : python -m scripts.ask_medical "Quelle est l'efficacité du traitement X ?"
 """
@@ -31,19 +29,10 @@ from hallucide.core_types.exceptions import HallucideError  # noqa: E402
 from hallucide.core_types.types import Intent, Passage, RetrievalState  # noqa: E402
 from hallucide.decomposition.routing import DomainRouter  # noqa: E402
 
-# Étage 2 en dur : dataset de repli si le routage (étage 1) échoue
-# techniquement (§5 : "le routing ne doit jamais casser la chaîne").
-FIXED_DATASET_ID = os.environ.get("ALIEN_DEFAULT_DATASET_ID", "Oncology")
-
-# Étage 1 : liste FERMÉE de domaines. Noms réels du connecteur MCP Alien
-# Intelligence (2 clusters BioRxiv/MedRxiv, ~90 datasets au total, un par
-# spécialité médicale -- liste complète en mémoire projet). Sous-ensemble
-# factuel/chiffré choisi ici pour la démo (§6 : "vérité facile à vérifier").
-#
-# INCONNU pour l'instant : est-ce que l'API Alien attend le NOM ("Oncology")
-# ou l'ID numérique (279) dans `dataset_ids` ? On envoie le nom par défaut
-# (cohérent avec l'exemple "Clinical_Trials" du brief hackathon) -- à corriger
-# ici en un seul endroit si l'API renvoie une erreur une fois testée en réel.
+# Étage 1 : liste FERMÉE de domaines (noms lisibles pour le prompt de Gemma).
+# Sous-ensemble factuel/chiffré du cluster MedRxiv (§6 : "vérité facile à
+# vérifier"). Étage 2 : chaque nom est mappé vers son ID numérique de dataset
+# MedRxiv réel (confirmé via datacluster_list_datasets, 2026-07-25).
 DOMAINS = {
     "Oncology": "Essais cliniques et études en oncologie (cancers)",
     "Cardiovascular_Medicine": "Études sur les maladies cardiovasculaires",
@@ -51,17 +40,28 @@ DOMAINS = {
     "Infectious_Diseases_(except_HIV_AIDS)": "Études sur les maladies infectieuses (hors VIH/sida)",
     "Endocrinology": "Études en endocrinologie (diabète, hormones, métabolisme)",
 }
+DATASET_IDS = {
+    "Oncology": "30",
+    "Cardiovascular_Medicine": "4",
+    "Neurology": "25",
+    "Infectious_Diseases_(except_HIV_AIDS)": "20",
+    "Endocrinology": "8",
+}
+
+# Dataset de repli si le routage (étage 1) échoue techniquement
+# (§5 : "le routing ne doit jamais casser la chaîne").
+FIXED_DATASET_NAME = os.environ.get("ALIEN_DEFAULT_DATASET_NAME", "Oncology")
 
 
 class _StubAlienRetrievalProvider:
-    """Remplace AlienRetrievalProvider tant qu'on n'a pas de vrais
-    ALIEN_API_TOKEN/ALIEN_CLUSTER_ID -- permet de tester tout le reste du
-    pipeline (Gemma génère + auto-décompose + vérif déterministe) dès
-    maintenant. Le texte est un passage plausible mais fictif, à ne jamais
-    confondre avec une vraie source (source_id le signale explicitement)."""
+    """Remplace AlienRetrievalProvider tant qu'on n'a pas ALIEN_API_TOKEN --
+    permet de tester tout le reste du pipeline (Gemma génère + auto-décompose
+    + vérif déterministe) sans accès réseau. Le texte est un passage
+    plausible mais fictif, à ne jamais confondre avec une vraie source
+    (source_id le signale explicitement)."""
 
     def retrieve(self, intent: Intent, state: RetrievalState, query: dict[str, str]) -> Passage:
-        dataset_id = query.get("dataset_id", FIXED_DATASET_ID)
+        dataset_id = query.get("dataset_id", "0")
         text = (
             "Dans un essai randomisé contrôlé (n=412), le traitement X a réduit "
             "l'incidence des rechutes de 34% sur 12 mois par rapport au placebo "
@@ -87,32 +87,35 @@ class _StubAlienRetrievalProvider:
 
 def _build_retrieval_provider():
     token = os.environ.get("ALIEN_API_TOKEN")
-    cluster_id = os.environ.get("ALIEN_CLUSTER_ID")
-    if token and cluster_id:
-        return AlienRetrievalProvider(api_token=token, cluster_id=cluster_id), True
+    if token:
+        mcp_url = os.environ.get("ALIEN_MCP_URL")
+        kwargs = {"api_token": token}
+        if mcp_url:
+            kwargs["mcp_url"] = mcp_url
+        return AlienRetrievalProvider(**kwargs), True
     return _StubAlienRetrievalProvider(), False
 
 
-def _route_dataset(model_provider: GemmaModelProvider, question: str, forced_dataset_id: str | None) -> str | None:
-    """Étage 1. Renvoie le dataset_id à interroger, ou None si le système
-    doit refuser de répondre (§5, "les 3 chemins possibles") :
-      - `forced_dataset_id` (argv[2]) court-circuite le routage -- pratique
-        pour tester étage 2+3 isolément, comme avant.
-      - dataset trouvé par Gemma dans la liste fermée -> ce dataset.
+def _route_dataset(model_provider: GemmaModelProvider, question: str, forced_name: str | None) -> str | None:
+    """Étage 1. Renvoie le NOM de domaine choisi, ou None si le système doit
+    refuser de répondre (§5, "les 3 chemins possibles") :
+      - `forced_name` (argv[2]) court-circuite le routage -- pratique pour
+        tester étage 2+3 isolément.
+      - domaine trouvé par Gemma dans la liste fermée -> ce nom.
       - AUCUN (explicite ou hors-liste, garde-fou dans DomainRouter) -> None,
         refus explicite, PAS de fallback (§5 : le refus est voulu, pas une panne).
-      - panne technique du routage lui-même -> fallback sur FIXED_DATASET_ID
+      - panne technique du routage lui-même -> fallback sur FIXED_DATASET_NAME
         (§5 : "le routing ne doit jamais casser la chaîne").
     """
-    if forced_dataset_id:
-        return forced_dataset_id
+    if forced_name:
+        return forced_name
 
     router = DomainRouter(model_provider, DOMAINS)
     try:
         chosen = router.route(question)
     except HallucideError as exc:
-        print(f"[!] Routage étage 1 en panne ({exc}) -> repli sur le dataset fixe '{FIXED_DATASET_ID}'.\n")
-        return FIXED_DATASET_ID
+        print(f"[!] Routage étage 1 en panne ({exc}) -> repli sur le dataset fixe '{FIXED_DATASET_NAME}'.\n")
+        return FIXED_DATASET_NAME
 
     if chosen is None:
         print("[REFUS] Aucun domaine du corpus ne couvre cette question -> "
@@ -125,7 +128,7 @@ def _route_dataset(model_provider: GemmaModelProvider, question: str, forced_dat
 
 def main() -> None:
     question = sys.argv[1] if len(sys.argv) > 1 else "Le traitement X réduit-il le risque de rechute ?"
-    forced_dataset_id = sys.argv[2] if len(sys.argv) > 2 else None
+    forced_name = sys.argv[2] if len(sys.argv) > 2 else None
 
     model_provider = GemmaModelProvider(
         base_url=os.environ.get("MODEL_BASE_URL", "http://localhost:8000/v1"),
@@ -134,15 +137,16 @@ def main() -> None:
 
     print(f"Question : {question}\n")
 
-    dataset_id = _route_dataset(model_provider, question, forced_dataset_id)
-    if dataset_id is None:
+    domain_name = _route_dataset(model_provider, question, forced_name)
+    if domain_name is None:
         return
+
+    dataset_id = DATASET_IDS.get(domain_name, domain_name)
 
     retrieval_provider, is_real = _build_retrieval_provider()
     if not is_real:
-        print("[!] ALIEN_API_TOKEN/ALIEN_CLUSTER_ID absents de .env -> utilisation d'un "
-              "passage STUB (pas de vraie donnée). Colle tes identifiants Alien pour "
-              "tester en réel.\n")
+        print("[!] ALIEN_API_TOKEN absent de .env -> utilisation d'un passage STUB "
+              "(pas de vraie donnée). Colle ton token pour tester en réel.\n")
 
     guard = Hallucide(model_provider=model_provider, retrieval_provider=retrieval_provider)
 

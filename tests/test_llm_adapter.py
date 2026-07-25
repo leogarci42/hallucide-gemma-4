@@ -9,9 +9,9 @@ class DummyModelProvider:
 
     def generate(self, messages, tools=None, tool_choice=None):
         system_message = next(m for m in messages if m["role"] == "system")["content"]
-        if "Découpe le message" in system_message:
+        if "Découpe le message" in system_message or "Break down the following user message" in system_message:
             return {"text": '[{"id": "1", "question": "Quelle est la règle ?"}]'}
-        if "CITATION vs REFORMULATION" in system_message:
+        if "CITATION vs REFORMULATION" in system_message or "Generate claims that answer" in system_message:
             return {"text": '[{"ref": "Passage authentique.", "status": "AUTHENTIFIÉ"}]'}
         return {"text": "[]"}
 

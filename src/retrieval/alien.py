@@ -1,51 +1,61 @@
 from __future__ import annotations
 
 import json
-import urllib.error
-import urllib.request
 from typing import Any
 
 from hallucide.core_types.exceptions import RetrievalError
+from hallucide.retrieval.mcp_client import McpToolClient
 from hallucide.core_types.types import Intent, Passage, RetrievalState
 
-DEFAULT_ALIEN_BASE_URL = "https://api.alien.club"
-DEFAULT_ALIEN_SCORE_THRESHOLD = 0.7
+# Serveur MCP officiel du hackathon (get.alien.club/gemma4-hackathon) : deux
+# clusters pré-indexés, un par endpoint, sans passer par la config manuelle
+# de cluster (qui échouait côté plateforme, "Failed to add datasets to your
+# library"). Défaut = MedRxiv, dont les catégories (Oncology, Cardiovascular_
+# Medicine, Neurology, ...) collent au périmètre "assistant médical" -- BioRxiv
+# reste dispo en pointant MCP_URL vers biorxiv.mcp.alien.club/mcp.
+DEFAULT_ALIEN_MCP_URL = "https://medrxiv.mcp.alien.club/mcp"
+# Observé en direct sur des requêtes pertinentes réelles : les scores tournent
+# autour de 0.5-0.7 (embeddings gemini-embedding-001 sur du texte scientifique
+# anglais), pas 0.9+. Un seuil à 0.7 par défaut coupait des résultats
+# manifestement pertinents -- abaissé pour ne pas sous-remonter le RAG massif.
+DEFAULT_ALIEN_SCORE_THRESHOLD = 0.4
 DEFAULT_ALIEN_LIMIT = 10
 
 _CHUNK_SEPARATOR = "\n\n---\n\n"
 
 
 class AlienRetrievalProvider:
-    """RetrievalProvider adossé à la recherche sémantique MCP Alien
-    Intelligence (études médicales BioRxiv/MedRxiv), sur le modèle de
-    `MoulineuseRetrievalProvider` mais en REST direct (stdlib `urllib`
-    uniquement, même convention que les providers LLM).
+    """RetrievalProvider adossé au serveur MCP Alien Intelligence (études
+    médicales BioRxiv/MedRxiv), sur le modèle de MoulineuseRetrievalProvider
+    (McpToolClient), pas d'appel REST direct -- l'API REST décrite dans le
+    brief initial n'est pas ce que le hackathon expose réellement ; le vrai
+    accès passe par ces endpoints MCP dédiés (get.alien.club/gemma4-hackathon).
 
-    RAG MASSIF (§4 hackathon) : contrairement aux autres providers qui
-    renvoient un seul extrait ciblé, `retrieve()` agrège TOUS les chunks
-    retournés par Alien en un seul `Passage` (texte concaténé, chunks
-    individuels conservés en `metadata["chunks"]`). C'est ce gros volume de
-    passages, injecté d'un coup dans le prompt Gemma, qui exploite le grand
-    contexte (§2). Le moteur de vérif (verifier.py) n'est pas modifié : un
-    claim AUTHENTIFIÉ doit être un sous-segment contigu de CE texte agrégé,
-    ce qui reste vrai qu'il y ait un ou N chunks concaténés dedans.
+    RAG MASSIF (§4 hackathon) : `retrieve()` agrège TOUS les chunks renvoyés
+    par `datacluster_vector_search_chunks` en un seul `Passage` (texte
+    concaténé, chunks individuels gardés en `metadata["chunks"]`). Le moteur
+    de vérif (verifier.py) n'est pas modifié : un claim AUTHENTIFIÉ doit être
+    un sous-segment contigu de CE texte agrégé, ce qui reste vrai qu'il y ait
+    un ou N chunks concaténés dedans.
 
-    `query["dataset_id"]` est fourni par l'appelant (étage 1 : Gemma choisit
-    le dataset dans une liste fermée, ou "AUCUN" -> aucun appel ici). Un seul
-    dataset par requête (§11 : périmètre de vérité net).
+    `query["dataset_id"]` est l'ID NUMÉRIQUE du dataset (ex: "30" pour
+    Oncology sur MedRxiv) fourni par l'appelant (étage 1 : Gemma choisit un
+    nom de domaine dans une liste fermée, le code le traduit en ID via
+    `DOMAINS`/`DATASET_IDS` -- voir scripts/ask_medical.py). Un seul dataset
+    par requête (§11 : périmètre de vérité net).
     """
 
     def __init__(
         self,
         api_token: str,
-        cluster_id: str,
-        base_url: str = DEFAULT_ALIEN_BASE_URL,
+        mcp_url: str = DEFAULT_ALIEN_MCP_URL,
+        client: McpToolClient | None = None,
         score_threshold: float = DEFAULT_ALIEN_SCORE_THRESHOLD,
         limit: int = DEFAULT_ALIEN_LIMIT,
     ) -> None:
         self.api_token = api_token
-        self.cluster_id = cluster_id
-        self.base_url = base_url.rstrip("/")
+        self.mcp_url = mcp_url
+        self.client = client or McpToolClient(mcp_url, headers={"Authorization": f"Bearer {api_token}"})
         self.score_threshold = score_threshold
         self.limit = limit
 
@@ -55,23 +65,14 @@ class AlienRetrievalProvider:
             raise RetrievalError("Alien route requires 'dataset_id' (choisi par le routage étage 1).")
 
         search_query = query.get("query") or intent.question
-        payload = {
+        arguments = {
             "query": search_query,
-            "dataset_ids": [dataset_id],
+            "dataset_ids": [str(dataset_id)],
             "score_threshold": float(query.get("score_threshold", self.score_threshold)),
             "limit": int(query.get("limit", self.limit)),
         }
 
-        try:
-            response_data = self._send_request(payload)
-        except urllib.error.HTTPError as exc:
-            body = exc.read().decode("utf-8", errors="replace")
-            raise RetrievalError(
-                f"Alien API error: {exc.code} {exc.reason} for dataset '{dataset_id}': {body}"
-            ) from exc
-        except urllib.error.URLError as exc:
-            raise RetrievalError(f"Alien API connection error: {exc.reason}") from exc
-
+        response_data = self.client.call_tool("datacluster_vector_search_chunks", arguments)
         chunks = self._extract_chunks(response_data)
         if not chunks:
             raise RetrievalError(
@@ -107,42 +108,24 @@ class AlienRetrievalProvider:
                 "nb_passages": len(chunks),
                 "nb_chars": len(aggregated_text),
                 "chunks": chunks,
-                "source": "Alien Intelligence (recherche sémantique)",
+                "source": f"Alien Intelligence ({self.mcp_url})",
             },
         )
-
-    def _send_request(self, payload: dict[str, Any]) -> Any:
-        data = json.dumps(payload).encode("utf-8")
-        request = urllib.request.Request(
-            f"{self.base_url}/clusters/{self.cluster_id}/proxy/api/v1/vector/chunks",
-            data=data,
-            headers={
-                "Authorization": f"Bearer {self.api_token}",
-                "Content-Type": "application/json",
-            },
-            method="POST",
-        )
-        with urllib.request.urlopen(request, timeout=30) as response:
-            raw = response.read()
-        try:
-            return json.loads(raw)
-        except json.JSONDecodeError as exc:
-            raise RetrievalError("Alien API returned malformed JSON.") from exc
 
     def _extract_chunks(self, data: Any) -> list[dict[str, Any]]:
-        items = data
+        if isinstance(data, str):
+            try:
+                data = json.loads(data)
+            except json.JSONDecodeError:
+                raise RetrievalError("Alien MCP returned malformed JSON.")
+
+        items = None
         if isinstance(data, dict):
-            # `or` en chaîne traiterait un dataset vide ([], réponse valide
-            # mais sans résultat) comme une clé absente et retomberait sur la
-            # clé suivante -- distinguer explicitement "absent" de "vide".
-            for key in ("chunks", "data", "results"):
-                if key in data:
-                    items = data[key]
-                    break
-            else:
-                items = None
+            payload = data.get("data") if isinstance(data.get("data"), dict) else data
+            if isinstance(payload, dict) and "results" in payload:
+                items = payload["results"]
         if not isinstance(items, list):
-            raise RetrievalError("Unexpected response shape from Alien vector/chunks.")
+            raise RetrievalError(f"Unexpected response shape from Alien datacluster_vector_search_chunks: {data!r}")
 
         chunks: list[dict[str, Any]] = []
         for item in items:
@@ -151,8 +134,9 @@ class AlienRetrievalProvider:
             text = item.get("chunk_text")
             if not isinstance(text, str) or not text.strip():
                 continue
+            metadata = item.get("metadata") or {}
             chunks.append({
-                "entry_id": str(item.get("entry_id", "")),
+                "entry_id": str(metadata.get("entry_id", item.get("id", ""))),
                 "score": float(item.get("score", 0.0)),
                 "text": text.strip(),
             })
