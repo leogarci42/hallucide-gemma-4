@@ -8,6 +8,10 @@ an unverified claim is never presented as a fact.
 Built at the Gemma 4 Hackathon, 42 Paris, 25 July 2026, for the **Context
 Engineering for SLMs** track.
 
+![The interface, with the pipeline running](docs/demo.gif)
+
+*Same recording as [`docs/demo.mp4`](docs/demo.mp4) if you want it full size.*
+
 ## The pipeline
 
 ```
