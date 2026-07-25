@@ -92,8 +92,23 @@ list and ten plainly outside it (weather, notice periods, football). The routed
 arm counts refusals; the baseline arm asks the same Gemma directly, with no
 routing, and counts how many it answers anyway.
 
-<!-- FILL FROM measurements.json ONCE THE BREV RUN COMPLETES; if it does not
-     complete, delete this paragraph rather than estimating anything. -->
+Run on `google/gemma-4-E4B-it`, vLLM on an NVIDIA Brev box, 33 seconds:
+
+```
+out of corpus, refused by routing   10/10
+out of corpus, answered by baseline 10/10
+in corpus, refused by routing        1/10   (over-refusal)
+in corpus, answered by baseline     10/10
+```
+
+Read the first two lines together: the same Gemma answers every one of the ten
+questions it has no corpus for, and refuses every one of them once routing sits
+in front. That difference is the context engineering, not the model.
+
+The over-refusal is one question, on treatments that slow Alzheimer's, which the
+router declined although Neurology covers it. We report it rather than trim the
+set: a refusal rate means nothing without what it costs. Per-question results
+are in `docs/measurements.json`.
 
 ## What broke
 
