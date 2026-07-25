@@ -33,7 +33,8 @@ import re  # noqa: E402
 import hashlib  # noqa: E402
 import uuid  # noqa: E402
 
-from hallucide import ClaudeModelProvider, GeminiModelProvider, MistralModelProvider, MultiSourceRetrievalProvider, Hallucide  # noqa: E402
+from hallucide import ClaudeModelProvider, GeminiModelProvider, GemmaModelProvider, MistralModelProvider, MultiSourceRetrievalProvider, Hallucide  # noqa: E402
+from hallucide.llm_providers.gemma import DEFAULT_GEMMA_BASE_URL, DEFAULT_GEMMA_MODEL  # noqa: E402
 from hallucide.core_types.exceptions import RetrievalError, HallucideError, VerificationError  # noqa: E402
 from hallucide.retrieval.mcp_client import McpToolClient  # noqa: E402
 from hallucide.core_types.types import Claim, ClaimStatus, Intent, Passage, RetrievalState  # noqa: E402
@@ -320,13 +321,14 @@ def _build_query(route: str, form: dict) -> dict:
 
 
 # Providers LLM disponibles : (variable d'environnement de la clé, constructeur).
-# Défaut = Claude (Anthropic). Ajouter un modèle = une ligne ici.
+# Défaut = Gemma 4 (hackathon : modèle unique et central, §8 règlement).
+# Ajouter un modèle = une ligne ici.
 _MODEL_PROVIDERS = {
     "claude": ("ANTHROPIC_API_KEY", ClaudeModelProvider),
     "mistral": ("MISTRAL_API_KEY", MistralModelProvider),
     "gemini": ("GEMINI_API_KEY", GeminiModelProvider),
 }
-DEFAULT_MODEL = "claude"
+DEFAULT_MODEL = "gemma"
 
 
 def _build_model_provider(model: str):
@@ -334,6 +336,15 @@ def _build_model_provider(model: str):
     (None, message d'erreur « ...API_KEY absente du .env ») si la clé manque —
     ce message déclenche le verrou « moteur non connecté » côté UI."""
     name = (model or DEFAULT_MODEL).lower()
+
+    # Gemma n'a pas de clé API (backend local vLLM/Ollama) : URL et nom de
+    # modèle configurables via .env pour basculer entre backends sans changer
+    # le code (§7 règle NVIDIA : jamais d'URL en dur).
+    if name == "gemma":
+        base_url = os.environ.get("MODEL_BASE_URL", DEFAULT_GEMMA_BASE_URL)
+        model_name = os.environ.get("MODEL_NAME", DEFAULT_GEMMA_MODEL)
+        return GemmaModelProvider(base_url=base_url, model=model_name), None
+
     entry = _MODEL_PROVIDERS.get(name)
     if entry is None:
         return None, f"Modèle inconnu : {model}"

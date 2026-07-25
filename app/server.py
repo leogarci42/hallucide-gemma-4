@@ -20,7 +20,9 @@ Endpoints :
   POST /ask             → pipeline réel + enrichissement score/couleur
 
 Lancement :  python -m app.server    puis http://localhost:8770
-Nécessite MISTRAL_API_KEY dans .env (sinon l'UI affiche « moteur non connecté »).
+Modèle par défaut : Gemma 4 (backend compatible OpenAI, vLLM/Ollama) via
+MODEL_BASE_URL/MODEL_NAME dans .env. Les autres providers (Claude/Mistral/
+Gemini) restent utilisables via leur clé API respective.
 """
 from __future__ import annotations
 
@@ -191,7 +193,7 @@ class Handler(BaseHTTPRequestHandler):
                     result = {**detection, **resolved}
             else:
                 raw = _run_pipeline(payload.get("message", ""), payload.get("route", ""),
-                                    payload.get("form", {}), payload.get("model", "claude"))
+                                    payload.get("form", {}), payload.get("model", "gemma"))
                 # Cas « moteur non connecté » : clé API absente → on le dit
                 # EXPLICITEMENT au front (jamais de faux résultat déguisé en vrai).
                 if isinstance(raw, dict) and "_API_KEY absente" in raw.get("error", ""):
@@ -214,8 +216,9 @@ def main():
     port = int(os.environ.get("WEBAPP_PORT", "8770"))
     server = ThreadingHTTPServer((host, port), Handler)
     print(f"Hallucide, front de chat : http://localhost:{port}  (Ctrl+C pour arrêter)")
-    key = "présente" if os.environ.get("ANTHROPIC_API_KEY") else "ABSENTE (mode « moteur non connecté »)"
-    print(f"ANTHROPIC_API_KEY (modèle par défaut : Claude) : {key}")
+    base_url = os.environ.get("MODEL_BASE_URL", "http://localhost:8000/v1")
+    model_name = os.environ.get("MODEL_NAME", "google/gemma-4-E4B-it")
+    print(f"Modèle par défaut : Gemma 4 -> {model_name} @ {base_url}")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
