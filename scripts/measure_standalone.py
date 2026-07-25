@@ -35,29 +35,29 @@ DOMAINS = {
 }
 
 IN_CORPUS = [
-    "Quelle est l'efficacité de l'immunothérapie dans le cancer du poumon ?",
-    "Le dépistage précoce réduit-il la mortalité du cancer colorectal ?",
-    "Quels sont les effets des statines sur le risque d'infarctus ?",
-    "L'hypertension non traitée augmente-t-elle le risque d'AVC ?",
-    "Quels traitements ralentissent la progression de la maladie d'Alzheimer ?",
-    "La stimulation cérébrale profonde aide-t-elle dans la maladie de Parkinson ?",
-    "Quelle est l'efficacité des antiviraux contre la grippe saisonnière ?",
-    "La vaccination réduit-elle la transmission de la tuberculose ?",
-    "La metformine réduit-elle les complications du diabète de type 2 ?",
-    "Quels sont les effets de la thyroxine sur l'hypothyroïdie ?",
+    "How effective is immunotherapy in non-small cell lung cancer?",
+    "Does early screening reduce colorectal cancer mortality?",
+    "What effect do statins have on the risk of myocardial infarction?",
+    "Does untreated hypertension increase the risk of stroke?",
+    "Which treatments slow the progression of Alzheimer's disease?",
+    "Does deep brain stimulation help in Parkinson's disease?",
+    "How effective are antivirals against seasonal influenza?",
+    "Does vaccination reduce tuberculosis transmission?",
+    "Does metformin reduce complications in type 2 diabetes?",
+    "What are the effects of thyroxine on hypothyroidism?",
 ]
 
 OUT_OF_CORPUS = [
-    "Quel temps fera-t-il demain à Paris ?",
-    "Quelle est la durée légale du préavis de démission en France ?",
-    "Comment réussir une pâte à choux ?",
-    "Qui a gagné la Ligue des champions en 2024 ?",
-    "Comment configurer un serveur nginx en reverse proxy ?",
-    "Quel est le prix moyen du mètre carré à Lyon ?",
-    "Quelles sont les règles du hors-jeu au football ?",
-    "Comment déclarer ses revenus fonciers ?",
-    "Quelle est la capitale de l'Australie ?",
-    "Comment changer une courroie de distribution ?",
+    "What will the weather be in Paris tomorrow?",
+    "What is the statutory notice period for resigning in France?",
+    "How do you make choux pastry?",
+    "Who won the Champions League in 2024?",
+    "How do I configure nginx as a reverse proxy?",
+    "What is the average price per square metre in Lyon?",
+    "What are the offside rules in football?",
+    "How do I declare rental income on my tax return?",
+    "What is the capital of Australia?",
+    "How do I replace a timing belt?",
 ]
 
 
