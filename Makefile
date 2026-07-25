@@ -1,6 +1,8 @@
 # `make` on its own starts the interface. `make help` lists the rest.
 .DEFAULT_GOAL := front
-.PHONY: front build lint stop clean help
+.PHONY: front build lint ask stop clean help
+
+PY := $(shell [ -x .venv/bin/python ] && echo .venv/bin/python || echo python3)
 
 # The engine, when it is running. Left unset, the interface says so instead of
 # inventing an answer.
@@ -14,11 +16,15 @@ front: stop  ## Start the interface on http://localhost:3000
 	@cd front && [ -d node_modules ] || npm install
 	@cd front && ENGINE_ORIGIN=$(ENGINE_ORIGIN) npm run dev
 
+ask:  ## Run the medical pipeline from the shell: make ask Q="your question"
+	@[ -n "$(Q)" ] || (echo 'usage: make ask Q="your question"' && exit 1)
+	$(PY) -m scripts.ask_medical "$(Q)"
+
 build:  ## Production build of the interface
 	@cd front && [ -d node_modules ] || npm install
 	@cd front && npm run build
 
-lint:  ## Types and lint
+lint:  ## Types and lint on the interface
 	@cd front && npx tsc --noEmit && npx eslint . --max-warnings=0
 
 stop:  ## Free the port if an interface is already running

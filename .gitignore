@@ -16,7 +16,7 @@ venv/
 # Editor
 .vscode/*
 !.vscode/settings.json
-back/*.egg-info/
+src/*.egg-info/
 hallucide.egg-info/
 .DS_Store
 .vscode/

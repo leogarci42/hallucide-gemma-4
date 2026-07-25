@@ -21,9 +21,10 @@ class McpToolClient:
     so those connections succeed (§17.3 souverain, robustesse réseau).
     """
 
-    def __init__(self, url: str) -> None:
+    def __init__(self, url: str, headers: dict[str, str] | None = None) -> None:
         ensure_system_trust_store()
         self.url = url
+        self.headers = headers
 
     def call_tool(self, name: str, arguments: dict[str, Any]) -> Any:
         try:
@@ -37,7 +38,7 @@ class McpToolClient:
         from mcp import ClientSession
         from mcp.client.streamable_http import streamablehttp_client
 
-        async with streamablehttp_client(self.url) as (read, write, _get_session_id):
+        async with streamablehttp_client(self.url, headers=self.headers) as (read, write, _get_session_id):
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 result = await session.call_tool(name, arguments)

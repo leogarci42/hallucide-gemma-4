@@ -51,7 +51,8 @@ Intelligence supplies the corpora and the retrieval.
 
 ```
 front/    the interface: Next.js, TypeScript, no CSS or state framework
-back/     the verification engine: decomposition, retrieval, verbatim checking
+src/      the engine: routing, Alien retrieval, Gemma, verbatim checking
+scripts/  command-line entry points into the engine
 ```
 
 ## Running the interface
@@ -142,7 +143,7 @@ A demo has to survive a flaky laptop, so failure is a designed state.
 
 ### Prior work
 
-The verification engine in `back/` started as **Hallucide**, an open-source
+The verification engine in `src/` started as **Hallucide**, an open-source
 project written by the same team for the Assemblée nationale hackathon earlier
 in 2026. Its history is public in this repository.
 

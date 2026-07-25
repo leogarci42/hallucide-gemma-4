@@ -12,6 +12,7 @@ from .validation.document import (
 from .core_types.exceptions import RetrievalError, HallucideError, VerificationError
 from .retrieval.file_retrieval import FileRetrievalProvider
 from .decomposition.llm import ModelProvider, MockModelProvider, PromptBasedDecomposer, PromptBasedIntentGenerator
+from .decomposition.routing import DomainRouter
 from .llm_providers.gemini import GeminiModelProvider
 from .llm_providers.claude import ClaudeModelProvider
 from .llm_providers.litellm_provider import LiteLLMModelProvider
@@ -40,7 +41,9 @@ from .analysis.measurement import (
     run_triage_measurement,
 )
 from .llm_providers.mistral import MistralModelProvider
+from .llm_providers.gemma import GemmaModelProvider
 from .retrieval.moulineuse import MoulineuseRetrievalProvider
+from .retrieval.alien import AlienRetrievalProvider
 from .retrieval.multi_hop import NextHop, build_hop_query, extract_followable_hops, select_next_hop
 from .retrieval.multi_source import MultiSourceRetrievalProvider
 from .decomposition.orchestration import Decomposer, IntentGenerator, Orchestrator
@@ -139,6 +142,7 @@ __all__ = [
     "Decomposer",
     "IntentGenerator",
     "Orchestrator",
+    "DomainRouter",
     "RetrievalProvider",
     "advance_retrieval",
     "DataGouvRetrievalProvider",
@@ -154,6 +158,7 @@ __all__ = [
     "resolve_human_validation_status",
     "McpToolClient",
     "MoulineuseRetrievalProvider",
+    "AlienRetrievalProvider",
     "NextHop",
     "build_hop_query",
     "extract_followable_hops",
