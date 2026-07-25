@@ -133,6 +133,7 @@ function readAnswer(v: unknown): Answer | undefined {
     model: typeof v.model === "string" ? v.model : undefined,
     dataset: typeof v.dataset === "string" ? v.dataset : undefined,
     contextPassages: typeof v.contextPassages === "number" ? v.contextPassages : undefined,
+    contextChars: typeof v.contextChars === "number" ? v.contextChars : undefined,
     contextTokens: typeof v.contextTokens === "number" ? v.contextTokens : undefined,
     latencyMs: typeof v.latencyMs === "number" ? v.latencyMs : undefined,
   };

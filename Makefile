@@ -1,6 +1,6 @@
 # `make` on its own starts the interface. `make help` lists the rest.
 .DEFAULT_GOAL := front
-.PHONY: front build lint ask stop clean help
+.PHONY: front bridge both build lint ask stop clean help
 
 PY := $(shell [ -x .venv/bin/python ] && echo .venv/bin/python || echo python3)
 
@@ -15,6 +15,12 @@ front: stop  ## Start the interface on http://localhost:3000
 		|| echo "  no engine: set ENGINE_ORIGIN=http://host:port to connect one"
 	@cd front && [ -d node_modules ] || npm install
 	@cd front && ENGINE_ORIGIN=$(ENGINE_ORIGIN) npm run dev
+
+bridge:  ## Serve the engine over HTTP on port 8000, which is what the interface reads
+	$(PY) bridge.py
+
+both:  ## Engine and interface together
+	@$(MAKE) bridge & sleep 2; ENGINE_ORIGIN=http://localhost:8000 $(MAKE) front
 
 ask:  ## Run the medical pipeline from the shell: make ask Q="your question"
 	@[ -n "$(Q)" ] || (echo 'usage: make ask Q="your question"' && exit 1)

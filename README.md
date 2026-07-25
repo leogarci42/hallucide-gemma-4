@@ -50,18 +50,31 @@ Intelligence supplies the corpora and the retrieval.
 ## Layout
 
 ```
-front/    the interface: Next.js, TypeScript, no CSS or state framework
-src/      the engine: routing, Alien retrieval, Gemma, verbatim checking
-scripts/  command-line entry points into the engine
-tests/    the engine's suite, run with pytest
+front/     the interface: Next.js, TypeScript, no CSS or state framework
+src/       the engine: routing, Alien retrieval, Gemma, verbatim checking
+scripts/   command-line entry points into the engine
+bridge.py  serves the engine over HTTP, in the contract the interface reads
+tests/     the engine's suite, run with pytest
 ```
 
 ## Running the interface
 
 ```bash
-make front          # the interface
-make ask Q="..."    # the pipeline straight from the shell
+make both           # engine on :8000, interface on :3000
+make front          # interface only
+make bridge         # engine only
+make ask Q="..."    # the pipeline straight from the shell, no HTTP
 ```
+
+`bridge.py` is the seam between the two. It imports the closed domain list, the
+dataset ids and the retrieval wiring from `scripts/ask_medical.py`, so nothing
+in `src/` is duplicated or modified: a change there carries over. It answers
+503 rather than serving anything invented — no model backend, no Alien token,
+and it says which.
+
+The engine counts characters, not tokens, so the interface displays
+`contextChars`. Converting one into the other would turn a measurement into an
+estimate.
 
 It runs on <http://localhost:3000> and works with no backend: it reports the
 engine as unreachable and every question fails with a retry button. Nothing is
@@ -103,12 +116,14 @@ ENGINE_ORIGIN=http://localhost:8000 make front
   "model":            "gemma-4-E4B-it",  // optional
   "dataset":          "medRxiv",         // optional, what routing chose
   "contextPassages":  24,                // optional
-  "contextTokens":    3102,              // optional
+  "contextChars":     18400,             // optional
+  "contextTokens":    3102,              // optional, if your engine counts them
   "latencyMs":        2410               // optional
 }
 ```
 
-`model`, `dataset`, `contextPassages`, `contextTokens` and `latencyMs` are
+`model`, `dataset`, `contextPassages`, `contextChars`, `contextTokens` and
+`latencyMs` are
 optional and are shown **only when the engine sends them**. The interface never
 computes, estimates or defaults a number. A field that is missing is a field
 that is not displayed.

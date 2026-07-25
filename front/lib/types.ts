@@ -47,6 +47,8 @@ export interface Answer {
   model?: string;
   /** How much was injected. Engine-reported; never estimated here. */
   contextPassages?: number;
+  /** The engine counts characters, not tokens; both are shown as reported. */
+  contextChars?: number;
   contextTokens?: number;
   latencyMs?: number;
   /** The dataset routing picked, when the engine names it. */
