@@ -55,7 +55,7 @@ from hallucide.verification.semantic_similarity import (  # noqa: E402
     similarity_score,
 )
 
-PORT = int(os.environ.get("PORT", "8000"))
+PORT = int(os.environ.get("PORT", "8100"))
 MODEL_BASE_URL = os.environ.get("MODEL_BASE_URL", "http://localhost:8000/v1")
 MODEL_NAME = os.environ.get("MODEL_NAME", "google/gemma-4-E4B-it")
 MAX_QUESTION_CHARS = 600
