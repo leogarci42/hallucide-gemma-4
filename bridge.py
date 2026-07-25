@@ -130,9 +130,20 @@ def _map_claim(index: int, claim: Any, passage: Any) -> dict[str, Any]:
     else:
         literal_pass = None  # reformulation: the check could not settle it
 
+    # Against the closest single chunk, never the concatenation of all of them:
+    # the score is a set overlap, so measuring one sentence against ten studies
+    # at once drives it to zero whatever the claim says. The matched chunk is
+    # preferred; failing that, the best-scoring one, never the whole passage.
     chunk = _matched_chunk(claim.ref, passage)
-    scoring_text = chunk["text"] if chunk is not None else passage.text
-    semantic_pass = similarity_score(claim.ref, scoring_text) >= DEFAULT_DISTANCE_THRESHOLD
+    if chunk is not None:
+        semantic_score = similarity_score(claim.ref, chunk["text"])
+    else:
+        texts = [c.get("text", "") for c in (passage.metadata or {}).get("chunks") or []]
+        semantic_score = max(
+            (similarity_score(claim.ref, t) for t in texts),
+            default=similarity_score(claim.ref, passage.text),
+        )
+    semantic_pass = semantic_score >= DEFAULT_DISTANCE_THRESHOLD
 
     if literal_pass:
         status = "grounded"

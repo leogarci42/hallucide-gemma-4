@@ -1,0 +1,184 @@
+{
+  "endpoint": "http://localhost:8000/v1",
+  "model": "google/gemma-4-E4B-it",
+  "ranOn": "NVIDIA Brev, vLLM, max_model_len 131072",
+  "producedBy": "scripts/measure_standalone.py",
+  "domains": [
+    "Oncology",
+    "Cardiovascular_Medicine",
+    "Neurology",
+    "Infectious_Diseases_(except_HIV_AIDS)",
+    "Endocrinology"
+  ],
+  "routed": {
+    "refusedOutOfCorpus": "10/10",
+    "refusedInCorpus": "1/10"
+  },
+  "baseline": {
+    "answeredOutOfCorpus": "10/10",
+    "answeredInCorpus": "10/10"
+  },
+  "elapsedSeconds": 33.3,
+  "rows": [
+    {
+      "question": "Quelle est l'efficacité de l'immunothérapie dans le cancer du poumon ?",
+      "inCorpus": true,
+      "routedTo": "Oncology",
+      "routedRefused": false,
+      "routingError": null,
+      "baselineAnswered": true
+    },
+    {
+      "question": "Le dépistage précoce réduit-il la mortalité du cancer colorectal ?",
+      "inCorpus": true,
+      "routedTo": "Oncology",
+      "routedRefused": false,
+      "routingError": null,
+      "baselineAnswered": true
+    },
+    {
+      "question": "Quels sont les effets des statines sur le risque d'infarctus ?",
+      "inCorpus": true,
+      "routedTo": "Cardiovascular_Medicine",
+      "routedRefused": false,
+      "routingError": null,
+      "baselineAnswered": true
+    },
+    {
+      "question": "L'hypertension non traitée augmente-t-elle le risque d'AVC ?",
+      "inCorpus": true,
+      "routedTo": "Cardiovascular_Medicine",
+      "routedRefused": false,
+      "routingError": null,
+      "baselineAnswered": true
+    },
+    {
+      "question": "Quels traitements ralentissent la progression de la maladie d'Alzheimer ?",
+      "inCorpus": true,
+      "routedTo": null,
+      "routedRefused": true,
+      "routingError": null,
+      "baselineAnswered": true
+    },
+    {
+      "question": "La stimulation cérébrale profonde aide-t-elle dans la maladie de Parkinson ?",
+      "inCorpus": true,
+      "routedTo": "Neurology",
+      "routedRefused": false,
+      "routingError": null,
+      "baselineAnswered": true
+    },
+    {
+      "question": "Quelle est l'efficacité des antiviraux contre la grippe saisonnière ?",
+      "inCorpus": true,
+      "routedTo": "Infectious_Diseases_(except_HIV_AIDS)",
+      "routedRefused": false,
+      "routingError": null,
+      "baselineAnswered": true
+    },
+    {
+      "question": "La vaccination réduit-elle la transmission de la tuberculose ?",
+      "inCorpus": true,
+      "routedTo": "Infectious_Diseases_(except_HIV_AIDS)",
+      "routedRefused": false,
+      "routingError": null,
+      "baselineAnswered": true
+    },
+    {
+      "question": "La metformine réduit-elle les complications du diabète de type 2 ?",
+      "inCorpus": true,
+      "routedTo": "Endocrinology",
+      "routedRefused": false,
+      "routingError": null,
+      "baselineAnswered": true
+    },
+    {
+      "question": "Quels sont les effets de la thyroxine sur l'hypothyroïdie ?",
+      "inCorpus": true,
+      "routedTo": "Endocrinology",
+      "routedRefused": false,
+      "routingError": null,
+      "baselineAnswered": true
+    },
+    {
+      "question": "Quel temps fera-t-il demain à Paris ?",
+      "inCorpus": false,
+      "routedTo": null,
+      "routedRefused": true,
+      "routingError": null,
+      "baselineAnswered": true
+    },
+    {
+      "question": "Quelle est la durée légale du préavis de démission en France ?",
+      "inCorpus": false,
+      "routedTo": null,
+      "routedRefused": true,
+      "routingError": null,
+      "baselineAnswered": true
+    },
+    {
+      "question": "Comment réussir une pâte à choux ?",
+      "inCorpus": false,
+      "routedTo": null,
+      "routedRefused": true,
+      "routingError": null,
+      "baselineAnswered": true
+    },
+    {
+      "question": "Qui a gagné la Ligue des champions en 2024 ?",
+      "inCorpus": false,
+      "routedTo": null,
+      "routedRefused": true,
+      "routingError": null,
+      "baselineAnswered": true
+    },
+    {
+      "question": "Comment configurer un serveur nginx en reverse proxy ?",
+      "inCorpus": false,
+      "routedTo": null,
+      "routedRefused": true,
+      "routingError": null,
+      "baselineAnswered": true
+    },
+    {
+      "question": "Quel est le prix moyen du mètre carré à Lyon ?",
+      "inCorpus": false,
+      "routedTo": null,
+      "routedRefused": true,
+      "routingError": null,
+      "baselineAnswered": true
+    },
+    {
+      "question": "Quelles sont les règles du hors-jeu au football ?",
+      "inCorpus": false,
+      "routedTo": null,
+      "routedRefused": true,
+      "routingError": null,
+      "baselineAnswered": true
+    },
+    {
+      "question": "Comment déclarer ses revenus fonciers ?",
+      "inCorpus": false,
+      "routedTo": null,
+      "routedRefused": true,
+      "routingError": null,
+      "baselineAnswered": true
+    },
+    {
+      "question": "Quelle est la capitale de l'Australie ?",
+      "inCorpus": false,
+      "routedTo": null,
+      "routedRefused": true,
+      "routingError": null,
+      "baselineAnswered": true
+    },
+    {
+      "question": "Comment changer une courroie de distribution ?",
+      "inCorpus": false,
+      "routedTo": null,
+      "routedRefused": true,
+      "routingError": null,
+      "baselineAnswered": true
+    }
+  ]
+}
