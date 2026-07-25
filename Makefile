@@ -11,7 +11,10 @@ BRIDGE_PORT ?= 8100
 
 # The engine, when it is running. Left unset, the interface says so instead of
 # inventing an answer.
-ENGINE_ORIGIN ?= http://localhost:$(BRIDGE_PORT)
+# 127.0.0.1, not localhost: the bridge binds IPv4 only, and Node's fetch
+# resolves localhost to ::1 first -- POSTs to /ask came back "fetch failed"
+# while GETs to /health slipped through on the v4 fallback.
+ENGINE_ORIGIN ?= http://127.0.0.1:$(BRIDGE_PORT)
 
 front: stop  ## Start the interface on http://localhost:3000
 	@echo "→ http://localhost:3000  (Ctrl+C to stop)"
