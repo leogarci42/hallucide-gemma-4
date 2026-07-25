@@ -91,68 +91,54 @@ function ErrorNotice({
 function ClaimRow({ claim }: { claim: Claim }) {
   const lanes = claim.semanticPass !== undefined || claim.literalPass !== undefined;
   const note = CLAIM_NOTE[claim.status];
-  const hasDetail = Boolean(claim.source) || lanes || Boolean(note);
-
-  const label = (
-    <>
-      <span className={styles.claimMark} aria-hidden />
-      <span className={styles.claimText}>{claim.text}</span>
-    </>
-  );
-
-  /* No source, no lanes, nothing to say: a plain row rather than a disclosure
-     that opens onto nothing. */
-  if (!hasDetail) {
-    return (
-      <li className={CLAIM_CLASS[claim.status]}>
-        <div className={styles.claimSummary}>{label}</div>
-      </li>
-    );
-  }
 
   return (
     <li className={CLAIM_CLASS[claim.status]}>
-      <details className={styles.claimDetails}>
-        <summary className={styles.claimSummary}>
-          {label}
-          <span className={styles.claimChevron} aria-hidden />
-        </summary>
+      <span className={styles.claimMark} aria-hidden />
+      <div>
+        <p className={styles.claimText}>{claim.text}</p>
 
-        <div className={styles.claimBody}>
-          {claim.source ? (
-            <p className={styles.claimSource}>
-              {claim.source.url ? (
-                <a href={claim.source.url} target="_blank" rel="noreferrer noopener">
-                  {claim.source.title}
-                </a>
-              ) : (
-                claim.source.title
-              )}
-            </p>
-          ) : (
-            note && <p className={styles.claimSource}>{note}</p>
-          )}
+        {/* Why it got that verdict, in plain sight: the source it was matched
+            against, or why it was withheld. */}
+        {claim.status === "grounded" && claim.source ? (
+          <p className={styles.claimSource}>
+            {claim.source.url ? (
+              <a href={claim.source.url} target="_blank" rel="noreferrer noopener">
+                {claim.source.title}
+              </a>
+            ) : (
+              claim.source.title
+            )}
+          </p>
+        ) : (
+          note && <p className={styles.claimSource}>{note}</p>
+        )}
 
-          {claim.source && note && <p className={styles.claimSource}>{note}</p>}
+        {lanes && (
+          <p className={styles.lanes}>
+            <span>
+              semantic{" "}
+              {claim.semanticPass === undefined ? "n/a" : claim.semanticPass ? "pass" : "fail"}
+            </span>
+            <span>
+              figures{" "}
+              {claim.literalPass === undefined ? "n/a" : claim.literalPass ? "pass" : "fail"}
+            </span>
+          </p>
+        )}
 
-          {lanes && (
-            <p className={styles.lanes}>
-              <span>
-                semantic{" "}
-                {claim.semanticPass === undefined ? "n/a" : claim.semanticPass ? "pass" : "fail"}
-              </span>
-              <span>
-                figures{" "}
-                {claim.literalPass === undefined ? "n/a" : claim.literalPass ? "pass" : "fail"}
-              </span>
-            </p>
-          )}
-
-          {claim.source?.passage && (
+        {/* Only the passage folds away: it is the bulky part, and it is the
+            one thing a reader wants on demand rather than always. */}
+        {claim.source?.passage && (
+          <details className={styles.passageDetails}>
+            <summary className={styles.passageToggle}>
+              <span className={styles.passageChevron} aria-hidden />
+              Source passage
+            </summary>
             <blockquote className={styles.passage}>{claim.source.passage}</blockquote>
-          )}
-        </div>
-      </details>
+          </details>
+        )}
+      </div>
     </li>
   );
 }
