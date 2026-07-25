@@ -133,6 +133,32 @@ reported as such rather than rendered half-way. `verdict` is derived from the
 claims when absent, and a claim `status` from the two checks; if either check
 is missing the claim is treated as unverifiable rather than assumed sound.
 
+## Measuring it
+
+```bash
+make measure
+```
+
+Two numbers, neither of them an opinion.
+
+**The verifier, on the engine's trap suite.** Deterministic: no model, no
+network, no key. Every case has a known expected verdict, so the figure is a
+count of agreements. Both halves are reported, because refusing everything
+would look perfect on one and useless on the other:
+
+```
+traps caught          4/4
+answerable published  6/6   (over-refusal check)
+overall               10/10
+```
+
+**The routing, against a baseline of the same model with no routing.** Twenty
+questions, ten covered by the closed domain list and ten plainly outside it.
+The routed arm counts refusals; the baseline arm asks Gemma directly and counts
+how many it answers anyway. Needs a reachable model backend: with none, the
+script says so and reports nothing rather than printing a number nothing
+produced.
+
 ## What happens when things break
 
 A demo has to survive a flaky laptop, so failure is a designed state.

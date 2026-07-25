@@ -1,6 +1,6 @@
 # `make` on its own starts the interface. `make help` lists the rest.
 .DEFAULT_GOAL := front
-.PHONY: front bridge both build lint ask stop clean help
+.PHONY: front bridge both build lint ask measure stop clean help
 
 PY := $(shell [ -x .venv/bin/python ] && echo .venv/bin/python || echo python3)
 
@@ -21,6 +21,12 @@ bridge:  ## Serve the engine over HTTP on port 8000, which is what the interface
 
 both:  ## Engine and interface together
 	@$(MAKE) bridge & sleep 2; ENGINE_ORIGIN=http://localhost:8000 $(MAKE) front
+
+measure:  ## Measure the verifier, then the routing if a model is reachable
+	$(PY) -m scripts.measure_verifier
+	@echo
+	@$(PY) -m scripts.measure_routing --json measurements.json || \
+		echo "  routing not measured: no model backend. Nothing reported."
 
 ask:  ## Run the medical pipeline from the shell: make ask Q="your question"
 	@[ -n "$(Q)" ] || (echo 'usage: make ask Q="your question"' && exit 1)
