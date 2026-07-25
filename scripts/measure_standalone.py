@@ -6,8 +6,8 @@ No clone, no install: standard library only, talks to an OpenAI-compatible
 endpoint. The routing prompt and the code guard are copied verbatim from
 src/decomposition/routing.py so the figure describes the shipped behaviour.
 
-    python measure_on_brev.py                       # localhost:8000
-    python measure_on_brev.py http://host:8000/v1 model-id
+    python scripts/measure_standalone.py                       # localhost:8000
+    python scripts/measure_standalone.py http://host:8000/v1 model-id
 
 Prints a table and writes measurements.json. If the model does not answer, it
 says so and reports nothing.

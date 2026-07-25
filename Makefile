@@ -1,7 +1,7 @@
 # `make` on its own starts everything: the engine bridge AND the interface.
 # `make help` lists the rest.
 .DEFAULT_GOAL := both
-.PHONY: front bridge both build lint ask measure stop clean help
+.PHONY: front bridge both build lint ask measure eval stop clean help
 
 PY := $(shell [ -x .venv/bin/python ] && echo .venv/bin/python || echo python3)
 
@@ -32,6 +32,9 @@ measure:  ## Measure the verifier, then the routing if a model is reachable
 	@echo
 	@$(PY) -m scripts.measure_routing --json measurements.json || \
 		echo "  routing not measured: no model backend. Nothing reported."
+
+eval:  ## The RAG table: Gemma alone vs +retrieval vs +verification. Needs a model AND an Alien token.
+	$(PY) -m scripts.run_eval
 
 ask:  ## Run the medical pipeline from the shell: make ask Q="your question"
 	@[ -n "$(Q)" ] || (echo 'usage: make ask Q="your question"' && exit 1)

@@ -60,7 +60,7 @@ tests/     the engine's suite, run with pytest
 ## Running the interface
 
 ```bash
-make both           # engine on :8000, interface on :3000
+make both           # engine on :8100, interface on :3000
 make front          # interface only
 make bridge         # engine only
 make ask Q="..."    # the pipeline straight from the shell, no HTTP
@@ -83,7 +83,7 @@ faked to fill the gap.
 To connect the engine:
 
 ```bash
-ENGINE_ORIGIN=http://localhost:8000 make front
+ENGINE_ORIGIN=http://localhost:8100 make front
 ```
 
 `ENGINE_ORIGIN` is read server-side only. Two routes are proxied.
@@ -195,6 +195,17 @@ python scripts/compare_metrics.py                               # the tables
 
 Both arms need a reachable backend: with none, they say so and report nothing
 rather than printing a number nothing produced.
+
+A third harness measures what the retrieval itself buys — the same questions
+answered by Gemma alone, then with the passages injected, then with the
+verification filtering what survives:
+
+```bash
+make eval
+```
+
+It needs both a model backend and an Alien token, so it is separate from
+`make measure`, which runs without either.
 
 ## What happens when things break
 
